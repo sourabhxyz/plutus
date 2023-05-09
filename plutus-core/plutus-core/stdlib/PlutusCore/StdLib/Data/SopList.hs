@@ -1,12 +1,14 @@
--- | Built-in @list@ and related functions.
+-- | SOP @list@ and related functions.
 
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE TypeOperators     #-}
 
-module PlutusCore.StdLib.Data.List
-    ( list
-    , caseList
+module PlutusCore.StdLib.Data.SopList
+    ( listData
+    , listTy
+    , nil
+    , cons
     , foldrList
     , foldList
     , sum
@@ -23,58 +25,84 @@ import PlutusCore.Name
 import PlutusCore.Quote
 
 import PlutusCore.StdLib.Data.Function
-import PlutusCore.StdLib.Data.Unit
+import PlutusCore.StdLib.Type
 
--- | @[]@ as a built-in PLC type.
-list :: uni `Contains` [] => Type TyName uni ()
-list = mkTyBuiltin @_ @[] ()
+-- | @List@ as a PLC type.
+--
+-- > fix \(list :: * -> *) (a :: *) -> sop [] [a, list a]
+listData :: RecursiveType uni fun ()
+listData = runQuote $ do
+    a    <- freshTyName "a"
+    list <- freshTyName "list"
+    let listA = TyApp () (TyVar () list) (TyVar () a)
+    makeRecursiveType () list [TyVarDecl () a $ Type ()]
+        $ TySOP () [[], [TyVar () a, listA]]
+
+listTy :: Type TyName uni ()
+listTy = _recursiveType listData
+
+-- |  '[]' as a PLC term.
+--
+-- >  /\(a :: *) -> wrapList [a] /\(r :: *) -> \(z : r) (f : a -> list a -> r) -> z)
+nil :: TermLike term TyName Name uni fun => term ()
+nil = runQuote $ do
+    let RecursiveType list wrapList = listData
+    a <- freshTyName "a"
+    let listA = TyApp () list (TyVar () a)
+    return
+        . tyAbs () a (Type ())
+        . wrapList [TyVar () a]
+        $ constr () listA 0 []
+
+-- |  '(:)' as a PLC term.
+--
+-- > /\(a :: *) -> \(x : a) (xs : list a) ->
+-- >     wrapList [a] /\(r :: *) -> \(z : r) (f : a -> list a -> r) -> f x xs
+cons :: TermLike term TyName Name uni fun => term ()
+cons = runQuote $ do
+    let RecursiveType list _ = listData
+    a  <- freshTyName "a"
+    x  <- freshName "x"
+    xs <- freshName "xs"
+    let listA = TyApp () list (TyVar () a)
+    return
+        . tyAbs () a (Type ())
+        . lamAbs () x (TyVar () a)
+        . lamAbs () xs listA
+        -- . wrapList [TyVar () a]
+        $ constr () listA 0 [var () x, var () xs]
 
 -- See Note [Pattern matching on built-in types].
 -- | Pattern matching on built-in lists. @caseList {a} xs@ on built-in lists is
 -- equivalent to @unwrap xs@ on lists defined in PLC itself (hence why we bind @r@ after @xs@).
 --
 -- > /\(a :: *) -> \(xs : list a) -> /\(r :: *) -> (z : r) (f : a -> list a -> r) ->
--- >     chooseList
--- >         {a}
--- >         {() -> r}
--- >         xs
--- >         (\(u : ()) -> z)
--- >         (\(u : ()) -> f (head {a} xs) (tail {a} xs))
--- >         ()
-caseList :: TermLike term TyName Name DefaultUni DefaultFun => term ()
+-- >     case {r} xs z f
+caseList :: TermLike term TyName Name uni fun => term ()
 caseList = runQuote $ do
+    let RecursiveType list _ = listData
     a <- freshTyName "a"
     r <- freshTyName "r"
     xs <- freshName "x"
     z <- freshName "z"
     f <- freshName "f"
-    u <- freshName "u"
     let listA = TyApp () list $ TyVar () a
-        funAtXs fun = apply () (tyInst () (builtin () fun) $ TyVar () a) $ var () xs
     return
         . tyAbs () a (Type ())
         . lamAbs () xs listA
         . tyAbs () r (Type ())
         . lamAbs () z (TyVar () r)
         . lamAbs () f (TyFun () (TyVar () a) . TyFun () listA $ TyVar () r)
-        $ mkIterApp ()
-                (mkIterInst () (builtin () ChooseList)
-                    [ TyVar () a
-                    , TyFun () unit $ TyVar () r
-                    ])
-            [ var () xs
-            , lamAbs () u unit $ var () z
-            , lamAbs () u unit $ mkIterApp () (var () f) [funAtXs HeadList, funAtXs TailList]
-            , unitval
-            ]
+        $ kase () (TyVar () r) (var () xs) [var () z, var () f]
 
 -- |  @foldr@ over built-in lists.
 --
 -- > /\(a :: *) (r :: *) -> \(f : a -> r -> r) (z : r) ->
 -- >     fix {list a} {r} \(rec : list a -> r) (xs : list a) ->
 -- >         caseList {a} xs {r} z \(x : a) (xs' : list a) -> f x (rec xs')
-foldrList :: TermLike term TyName Name DefaultUni DefaultFun => term ()
+foldrList :: TermLike term TyName Name uni fun => term ()
 foldrList = runQuote $ do
+    let RecursiveType list _ = listData
     a   <- freshTyName "a"
     r   <- freshTyName "r"
     f   <- freshName "f"
@@ -107,8 +135,9 @@ foldrList = runQuote $ do
 -- > /\(a :: *) (r :: *) -> \(f : r -> a -> r) ->
 -- >     fix {r} {list a -> r} \(rec : r -> list a -> r) (z : r) (xs : list a) ->
 -- >         caseList {a} xs {r} z \(x : a) (xs' : list a) -> rec (f z x) xs'
-foldList :: TermLike term TyName Name DefaultUni DefaultFun => term ()
+foldList :: TermLike term TyName Name uni fun => term ()
 foldList = runQuote $ do
+    let RecursiveType list _ = listData
     a   <- freshTyName "a"
     r   <- freshTyName "r"
     f   <- freshName "f"

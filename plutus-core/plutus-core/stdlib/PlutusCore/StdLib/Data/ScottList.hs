@@ -1,4 +1,4 @@
--- | @list@ and related functions.
+-- | Scott-encoded @list@ and related functions.
 
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications  #-}

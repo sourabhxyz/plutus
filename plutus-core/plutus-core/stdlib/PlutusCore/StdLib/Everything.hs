@@ -22,6 +22,7 @@ import PlutusCore.StdLib.Data.List as Builtin
 import PlutusCore.StdLib.Data.Nat as Nat
 import PlutusCore.StdLib.Data.Pair as Builtin
 import PlutusCore.StdLib.Data.ScottList as Scott
+import PlutusCore.StdLib.Data.SopList as Sop
 import PlutusCore.StdLib.Data.Sum as Sum
 import PlutusCore.StdLib.Data.Unit
 import PlutusCore.StdLib.Meta.Data.Tuple
@@ -73,15 +74,24 @@ stdLib =
                   , plcTermFile "caseData" caseData
                   ]
               , treeFolderContents "ScottList"
-                  [ plcTypeFile "List"       listTy
-                  , plcTermFile "Nil"        nil
-                  , plcTermFile "Cons"       cons
+                  [ plcTypeFile "List"       Scott.listTy
+                  , plcTermFile "Nil"        Scott.nil
+                  , plcTermFile "Cons"       Scott.cons
                   , plcTermFile "FoldrList"  Scott.foldrList
                   , plcTermFile "FoldList"   Scott.foldList
                   , plcTermFile "Reverse"    Scott.reverse
                   , plcTermFile "EnumFromTo" Scott.enumFromTo
                   , plcTermFile "Sum"        Scott.sum
                   , plcTermFile "Product"    Scott.product
+                  ]
+              , treeFolderContents "SopList"
+                  [ plcTypeFile "List"      Sop.listTy
+                  , plcTermFile "Nil"       Sop.nil
+                  , plcTermFile "Cons"      Sop.cons
+                  , plcTermFile "FoldrList" Sop.foldrList
+                  , plcTermFile "FoldList"  Sop.foldList
+                  , plcTermFile "Sum"       Sop.sum
+                  , plcTermFile "Product"   Sop.product
                   ]
               , treeFolderContents "Nat"
                   [ plcTypeFile "Nat"          natTy

@@ -1,0 +1,1 @@
+\a -> ifix (\(list :: * -> *) -> \a -> sop [] [a, (list a)]) a

@@ -1,0 +1,4 @@
+/\a -> \(x : a) -> \(xs : (\a -> ifix (\(list :: * -> *) -> \a -> sop [  ] [ a
+                                                                           , (list a) ]) a) a) -> constr ((\a -> ifix (\(list :: * -> *) -> \a -> sop [  ] [ a
+                                                                                                                                                           , (list a) ]) a) a) 0 [ x
+                                                                                                                                                                                 , xs ]

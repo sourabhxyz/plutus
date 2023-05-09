@@ -143,6 +143,7 @@ library
     PlutusCore.StdLib.Data.Pair
     PlutusCore.StdLib.Data.ScottList
     PlutusCore.StdLib.Data.ScottUnit
+    PlutusCore.StdLib.Data.SopList
     PlutusCore.StdLib.Data.Sum
     PlutusCore.StdLib.Data.Unit
     PlutusCore.StdLib.Everything
