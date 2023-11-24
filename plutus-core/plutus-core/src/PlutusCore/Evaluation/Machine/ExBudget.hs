@@ -179,6 +179,8 @@ data ExBudget = ExBudget { exBudgetCPU :: ExCPU, exBudgetMemory :: ExMemory }
     deriving (FromJSON, ToJSON) via CustomJSON '[FieldLabelModifier LowerIntialCharacter] ExBudget
     -- LowerIntialCharacter won't actually do anything here, but let's have it in case we change the field names.
 
+deriving newtype instance PrettyBy config (Enclosed ExBudget)
+
 -- | Subract one 'ExBudget' from another. Does not guarantee that the result is positive.
 minusExBudget :: ExBudget -> ExBudget -> ExBudget
 minusExBudget (ExBudget c1 m1) (ExBudget c2 m2) = ExBudget (c1-c2) (m1-m2)

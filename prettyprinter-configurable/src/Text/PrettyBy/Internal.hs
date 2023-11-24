@@ -30,8 +30,7 @@ module Text.PrettyBy.Internal
     ( PrettyBy (..)
     , HasPrettyDefaults
     , IgnorePrettyConfig (..)
-    , InnerPrettyConfig (..)
-    , InnerPrettyBy
+    , Enclosed (..)
     , AttachPrettyConfig (..)
     , withAttachPrettyConfig
     , defaultPrettyFunctorBy
@@ -164,7 +163,7 @@ class PrettyBy config a where
     -- In normal circumstances only the 'prettyBy' function is used.
     -- The default implementation of 'prettyListBy' is in terms of 'defaultPrettyFunctorBy'.
     prettyListBy :: config -> [a] -> Doc ann
-    default prettyListBy :: PrettyBy (InnerPrettyConfig config) a => config -> [a] -> Doc ann
+    default prettyListBy :: PrettyBy config (Enclosed a) => config -> [a] -> Doc ann
     prettyListBy = defaultPrettyFunctorBy
 
 -- #########################################
@@ -255,11 +254,12 @@ newtype IgnorePrettyConfig a = IgnorePrettyConfig
 -- >>> prettyBy Cfg $ IgnorePrettyConfig D
 -- D
 instance Pretty a => PrettyBy config (IgnorePrettyConfig a) where
-    prettyBy _ = pretty . unIgnorePrettyConfig
+    prettyBy     _ = pretty     . (coerce ::  IgnorePrettyConfig a  ->  a )
+    prettyListBy _ = prettyList . (coerce :: [IgnorePrettyConfig a] -> [a])
 
-newtype InnerPrettyConfig config = InnerPrettyConfig config
-
-type InnerPrettyBy config = PrettyBy (InnerPrettyConfig config)
+newtype Enclosed a = Enclosed
+    { unEnclosed :: a
+    }
 
 -- | A config together with some value. The point is to provide a 'Pretty' instance
 -- for anything that has a @PrettyBy config@ instance.
@@ -271,8 +271,8 @@ data AttachPrettyConfig config a = AttachPrettyConfig !config !a
 -- >>> instance PrettyBy Cfg D where prettyBy Cfg D = "D"
 -- >>> pretty $ AttachPrettyConfig Cfg D
 -- D
-instance PrettyBy (InnerPrettyConfig config) a => Pretty (AttachPrettyConfig config a) where
-    pretty (AttachPrettyConfig config x) = prettyBy (InnerPrettyConfig config) x
+instance PrettyBy config (Enclosed a) => Pretty (AttachPrettyConfig config a) where
+    pretty (AttachPrettyConfig config x) = prettyBy config (Enclosed x)
 
 -- | Pass @AttachPrettyConfig config@ to the continuation.
 withAttachPrettyConfig
@@ -480,14 +480,18 @@ instance DefaultPrettyBy config Lazy.Text
 
 -- Straightforward polymorphic instances.
 
-instance InnerPrettyBy config a => DefaultPrettyBy config (Identity a)
-instance InnerPrettyBy config a => DefaultPrettyBy config (Const a (b :: Type))
-instance (InnerPrettyBy config a, InnerPrettyBy config b) => DefaultPrettyBy config (a, b)
+instance PrettyBy config (Enclosed a) => DefaultPrettyBy config (Identity a)
+instance PrettyBy config (Enclosed a) => DefaultPrettyBy config (Const a (b :: Type))
+instance (PrettyBy config (Enclosed a), PrettyBy config (Enclosed b)) =>
+    DefaultPrettyBy config (a, b)
 
 -- We don't have @Trifunctor@ in base, unfortunately, hence writing things out manually. Could we
 -- do that via generics? I feel like that would amount to implementing n-ary 'Functor' anyway.
-instance (InnerPrettyBy config a, InnerPrettyBy config b, InnerPrettyBy config c) =>
-            DefaultPrettyBy config (a, b, c) where
+instance
+        ( PrettyBy config (Enclosed a)
+        , PrettyBy config (Enclosed b)
+        , PrettyBy config (Enclosed c)
+        ) => DefaultPrettyBy config (a, b, c) where
     defaultPrettyBy config (x, y, z) =
         withAttachPrettyConfig config $ \attach -> pretty (attach x, attach y, attach z)
 
@@ -496,8 +500,9 @@ instance (InnerPrettyBy config a, InnerPrettyBy config b, InnerPrettyBy config c
 instance PrettyBy config Strict.Text => DefaultPrettyBy config Char where
     defaultPrettyListBy config = prettyBy config . Strict.pack
 
-instance InnerPrettyBy config a => DefaultPrettyBy config (Maybe a) where
-    defaultPrettyListBy config = prettyListBy (InnerPrettyConfig config) . catMaybes
+instance PrettyBy config (Enclosed a) => DefaultPrettyBy config (Maybe a) where
+    -- defaultPrettyBy config -- TODO
+    defaultPrettyListBy config = prettyListBy config . map Enclosed . catMaybes
 
 instance PrettyBy config a => DefaultPrettyBy config [a] where
     defaultPrettyBy = prettyListBy

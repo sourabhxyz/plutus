@@ -114,9 +114,6 @@ type instance HasPrettyDefaults PrettyConfigName = 'True
 class HasPrettyConfigName config where
     toPrettyConfigName :: config -> PrettyConfigName
 
-instance HasPrettyConfigName config => HasPrettyConfigName (InnerPrettyConfig config) where
-    toPrettyConfigName (InnerPrettyConfig config) = toPrettyConfigName config
-
 instance HasPrettyConfigName (Sole PrettyConfigName) where
     toPrettyConfigName = coerce
 

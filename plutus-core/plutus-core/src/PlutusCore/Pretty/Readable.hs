@@ -45,7 +45,6 @@ data PrettyConfigReadable configName = PrettyConfigReadable
   }
 
 type instance HasPrettyDefaults (PrettyConfigReadable _) = 'True
-type instance HasPrettyDefaults (InnerPrettyConfig (PrettyConfigReadable _)) = 'False
 
 -- | The "readably pretty-printable" constraint.
 type PrettyReadableBy configName = PrettyBy (PrettyConfigReadable configName)
@@ -70,23 +69,12 @@ instance
 instance HasRenderContext (PrettyConfigReadable configName) where
   renderContext = pcrRenderContext
 
--- instance
---   PrettyReadableBy configName a =>
---   NonDefaultPrettyBy (InnerPrettyConfig (PrettyConfigReadable configName)) a
---   where
---   nonDefaultPrettyBy (InnerPrettyConfig config) = pretty . AttachPrettyConfig configBot where
---     configBot = config & renderContext .~ botRenderContext
-
---   nonDefaultPrettyListBy = undefined -- prettyBy  -- TODO: ?????
-
--- instance
---   PrettyReadableBy configName a =>
---   PrettyBy (InnerPrettyConfig (PrettyConfigReadable configName)) a
---   where
---   prettyBy (InnerPrettyConfig config) = pretty . AttachPrettyConfig configBot where
---     configBot = OuterPrettyConfig $ config & renderContext .~ botRenderContext
-
---   prettyListBy = _
+instance
+  PrettyReadableBy configName a =>
+  PrettyBy (PrettyConfigReadable configName) (Enclosed a)
+  where
+  prettyBy config (Enclosed x) = prettyBy configBot x where
+    configBot = config & renderContext .~ botRenderContext
 
 {- | For rendering things in a readable manner regardless of the pretty-printing function chosen.
 I.e. all of 'show', 'pretty', 'prettyClassicDef' will use 'PrettyReadable' instead of doing what
@@ -136,7 +124,7 @@ instance Pretty a => Pretty (Parened a) where
 -- deriving via PrettyCommon (a, b)
 --     instance PrettyDefaultBy config (a, b) => PrettyBy config (a, b)
 
-instance InnerPrettyBy config a => DefaultPrettyBy config (Parened a)
+instance PrettyBy config (Enclosed a) => DefaultPrettyBy config (Parened a)
 deriving via PrettyCommon (Parened a)
     instance PrettyDefaultBy config (Parened a) => PrettyBy config (Parened a)
 
@@ -293,6 +281,6 @@ iterInterAppPrettyM ::
   m (Doc ann)
 iterInterAppPrettyM fun args =
   iterAppDocM $ \prettyFun prettyArg ->
-    let ppArg (Left ty)    = prettyArg $ (3 :: Integer, 3 :: Integer) -- inBraces ty
+    let ppArg (Left ty)    = prettyArg $ inBraces ty
         ppArg (Right term) = prettyArg term
     in prettyFun fun :| map ppArg args

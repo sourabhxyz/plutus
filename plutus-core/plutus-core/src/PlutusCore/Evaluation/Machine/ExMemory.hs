@@ -79,8 +79,8 @@ newtype ExMemory = ExMemory CostingInteger
   deriving anyclass NoThunks
 instance Pretty ExMemory where
     pretty (ExMemory i) = pretty (unSatInt i)
-instance PrettyBy config ExMemory where
-    prettyBy _ m = pretty m
+deriving newtype instance PrettyBy config (Enclosed ExMemory)
+instance PrettyBy config ExMemory
 
 {- Note [Manual Semigroup and Monoid instances for Sum monoids]
 We don't do
@@ -117,8 +117,8 @@ newtype ExCPU = ExCPU CostingInteger
   deriving anyclass NoThunks
 instance Pretty ExCPU where
     pretty (ExCPU i) = pretty (unSatInt i)
-instance PrettyBy config ExCPU where
-    prettyBy _ m = pretty m
+deriving newtype instance PrettyBy config (Enclosed ExCPU)
+instance PrettyBy config ExCPU
 
 -- See Note [Manual Semigroup and Monoid instances for Sum monoids].
 instance Semigroup ExCPU where
