@@ -117,14 +117,7 @@ data Parened a = Parened
 instance Pretty a => Pretty (Parened a) where
     pretty (Parened opening closing x) = fold [pretty opening, pretty x, pretty closing]
 
-    -- • Could not deduce (PrettyBy
-    --                       (InnerPrettyConfig (PrettyConfigReadable configName)) ty)
-
--- instance (InnerPrettyBy config a, InnerPrettyBy config b) => DefaultPrettyBy config (a, b)
--- deriving via PrettyCommon (a, b)
---     instance PrettyDefaultBy config (a, b) => PrettyBy config (a, b)
-
-instance PrettyBy config (Enclosed a) => DefaultPrettyBy config (Parened a)
+instance PrettyBy config a => DefaultPrettyBy config (Parened a)
 deriving via PrettyCommon (Parened a)
     instance PrettyDefaultBy config (Parened a) => PrettyBy config (Parened a)
 

@@ -156,6 +156,10 @@ class PrettyBy config a where
     default prettyBy :: DefaultFor "prettyBy" config a => config -> a -> Doc ann
     prettyBy = defaultFor @"prettyBy"
 
+    prettyEnclosedBy :: config -> a -> Doc ann
+    default prettyEnclosedBy :: config -> a -> Doc ann
+    prettyEnclosedBy = prettyBy
+
     -- Defaulting to 'prettyList' would require the user to either provide a 'Pretty' instance for
     -- each data type implementing 'PrettyBy' or to supply the sensible default implementation as
     -- 'defaultPrettyFunctorBy' manually and both the options are silly.
@@ -163,7 +167,7 @@ class PrettyBy config a where
     -- In normal circumstances only the 'prettyBy' function is used.
     -- The default implementation of 'prettyListBy' is in terms of 'defaultPrettyFunctorBy'.
     prettyListBy :: config -> [a] -> Doc ann
-    default prettyListBy :: PrettyBy config (Enclosed a) => config -> [a] -> Doc ann
+    default prettyListBy :: config -> [a] -> Doc ann
     prettyListBy = defaultPrettyFunctorBy
 
 -- #########################################
@@ -271,8 +275,8 @@ data AttachPrettyConfig config a = AttachPrettyConfig !config !a
 -- >>> instance PrettyBy Cfg D where prettyBy Cfg D = "D"
 -- >>> pretty $ AttachPrettyConfig Cfg D
 -- D
-instance PrettyBy config (Enclosed a) => Pretty (AttachPrettyConfig config a) where
-    pretty (AttachPrettyConfig config x) = prettyBy config (Enclosed x)
+instance PrettyBy config a => Pretty (AttachPrettyConfig config a) where
+    pretty (AttachPrettyConfig config x) = prettyEnclosedBy config x
 
 -- | Pass @AttachPrettyConfig config@ to the continuation.
 withAttachPrettyConfig
@@ -480,18 +484,14 @@ instance DefaultPrettyBy config Lazy.Text
 
 -- Straightforward polymorphic instances.
 
-instance PrettyBy config (Enclosed a) => DefaultPrettyBy config (Identity a)
-instance PrettyBy config (Enclosed a) => DefaultPrettyBy config (Const a (b :: Type))
-instance (PrettyBy config (Enclosed a), PrettyBy config (Enclosed b)) =>
-    DefaultPrettyBy config (a, b)
+instance PrettyBy config a => DefaultPrettyBy config (Identity a)
+instance PrettyBy config a => DefaultPrettyBy config (Const a (b :: Type))
+instance (PrettyBy config a, PrettyBy config b) => DefaultPrettyBy config (a, b)
 
 -- We don't have @Trifunctor@ in base, unfortunately, hence writing things out manually. Could we
 -- do that via generics? I feel like that would amount to implementing n-ary 'Functor' anyway.
-instance
-        ( PrettyBy config (Enclosed a)
-        , PrettyBy config (Enclosed b)
-        , PrettyBy config (Enclosed c)
-        ) => DefaultPrettyBy config (a, b, c) where
+instance (PrettyBy config a, PrettyBy config b, PrettyBy config c) =>
+            DefaultPrettyBy config (a, b, c) where
     defaultPrettyBy config (x, y, z) =
         withAttachPrettyConfig config $ \attach -> pretty (attach x, attach y, attach z)
 
@@ -500,9 +500,9 @@ instance
 instance PrettyBy config Strict.Text => DefaultPrettyBy config Char where
     defaultPrettyListBy config = prettyBy config . Strict.pack
 
-instance PrettyBy config (Enclosed a) => DefaultPrettyBy config (Maybe a) where
+instance PrettyBy config a => DefaultPrettyBy config (Maybe a) where
     -- defaultPrettyBy config -- TODO
-    defaultPrettyListBy config = prettyListBy config . map Enclosed . catMaybes
+    defaultPrettyListBy config = prettyListBy config . catMaybes -- TODO
 
 instance PrettyBy config a => DefaultPrettyBy config [a] where
     defaultPrettyBy = prettyListBy

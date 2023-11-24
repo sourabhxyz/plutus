@@ -104,7 +104,6 @@ data Named a = Named
   }
   deriving stock (Functor, Foldable, Traversable)
 
-deriving newtype instance HasPrettyConfigName config => PrettyBy config (Enclosed Name)
 instance HasPrettyConfigName config => PrettyBy config Name where
   prettyBy config (Name txt (Unique uniq))
     -- See Note [Pretty-printing names with uniques]
