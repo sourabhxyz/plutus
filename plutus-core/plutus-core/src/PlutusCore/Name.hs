@@ -104,7 +104,7 @@ data Named a = Named
   }
   deriving stock (Functor, Foldable, Traversable)
 
-instance (HasPrettyConfigName config) => PrettyBy config Name where
+instance HasPrettyConfigName config => PrettyBy config Name where
   prettyBy config (Name txt (Unique uniq))
     -- See Note [Pretty-printing names with uniques]
     | showsUnique = pretty . toPrintedName $ txt <> "_" <> render (pretty uniq)

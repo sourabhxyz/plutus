@@ -475,6 +475,7 @@ instance PrettyBy config (t NameAnn) => PrettyBy config (ScopeCheckError t) wher
         , indent 2 $ prettyBy config output <> hardline
         , "is correct"
         ]
+    prettyListBy = undefined
 
 -- See Note [Example of a scoping check].
 -- | Check if a pass respects scoping.

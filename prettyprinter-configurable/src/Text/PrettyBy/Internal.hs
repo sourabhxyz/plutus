@@ -30,6 +30,8 @@ module Text.PrettyBy.Internal
     ( PrettyBy (..)
     , HasPrettyDefaults
     , IgnorePrettyConfig (..)
+    , InnerPrettyConfig (..)
+    , InnerPrettyBy
     , AttachPrettyConfig (..)
     , withAttachPrettyConfig
     , defaultPrettyFunctorBy
@@ -162,7 +164,7 @@ class PrettyBy config a where
     -- In normal circumstances only the 'prettyBy' function is used.
     -- The default implementation of 'prettyListBy' is in terms of 'defaultPrettyFunctorBy'.
     prettyListBy :: config -> [a] -> Doc ann
-    default prettyListBy :: config -> [a] -> Doc ann
+    default prettyListBy :: PrettyBy (InnerPrettyConfig config) a => config -> [a] -> Doc ann
     prettyListBy = defaultPrettyFunctorBy
 
 -- #########################################
@@ -255,6 +257,10 @@ newtype IgnorePrettyConfig a = IgnorePrettyConfig
 instance Pretty a => PrettyBy config (IgnorePrettyConfig a) where
     prettyBy _ = pretty . unIgnorePrettyConfig
 
+newtype InnerPrettyConfig config = InnerPrettyConfig config
+
+type InnerPrettyBy config = PrettyBy (InnerPrettyConfig config)
+
 -- | A config together with some value. The point is to provide a 'Pretty' instance
 -- for anything that has a @PrettyBy config@ instance.
 data AttachPrettyConfig config a = AttachPrettyConfig !config !a
@@ -265,8 +271,8 @@ data AttachPrettyConfig config a = AttachPrettyConfig !config !a
 -- >>> instance PrettyBy Cfg D where prettyBy Cfg D = "D"
 -- >>> pretty $ AttachPrettyConfig Cfg D
 -- D
-instance PrettyBy config a => Pretty (AttachPrettyConfig config a) where
-    pretty (AttachPrettyConfig config x) = prettyBy config x
+instance PrettyBy (InnerPrettyConfig config) a => Pretty (AttachPrettyConfig config a) where
+    pretty (AttachPrettyConfig config x) = prettyBy (InnerPrettyConfig config) x
 
 -- | Pass @AttachPrettyConfig config@ to the continuation.
 withAttachPrettyConfig
@@ -306,10 +312,10 @@ type family StarsOfHead (target :: Symbol) (a :: Type) :: Type where
         )
     StarsOfHead _      ((f :: k -> Type -> Type -> Type) a b c) = Type -> Type -> Type
     StarsOfHead _      ((f :: Type -> Type -> Type)      a b  ) = Type -> Type -> Type
-    StarsOfHead _      ((f :: k -> Type -> Type)      a b  ) = Type -> Type
-    StarsOfHead _      ((f :: Type -> Type)           a    ) = Type -> Type
-    StarsOfHead _      ((f :: k -> Type)           a    ) = Type
-    StarsOfHead _      a                               = Type
+    StarsOfHead _      ((f :: k -> Type -> Type)         a b  ) = Type -> Type
+    StarsOfHead _      ((f :: Type -> Type)              a    ) = Type -> Type
+    StarsOfHead _      ((f :: k -> Type)                 a    ) = Type
+    StarsOfHead _      a                                        = Type
 
 -- | This allows us to have different default implementations for 'prettyBy' and 'defaultPrettyBy'
 -- depending on whether @a@ is a monomorphic type or a 'Functor' or a 'Bifunctor'. Read the docs of
@@ -474,13 +480,13 @@ instance DefaultPrettyBy config Lazy.Text
 
 -- Straightforward polymorphic instances.
 
-instance PrettyBy config a => DefaultPrettyBy config (Identity a)
-instance PrettyBy config a => DefaultPrettyBy config (Const a (b :: Type))
-instance (PrettyBy config a, PrettyBy config b) => DefaultPrettyBy config (a, b)
+instance InnerPrettyBy config a => DefaultPrettyBy config (Identity a)
+instance InnerPrettyBy config a => DefaultPrettyBy config (Const a (b :: Type))
+instance (InnerPrettyBy config a, InnerPrettyBy config b) => DefaultPrettyBy config (a, b)
 
 -- We don't have @Trifunctor@ in base, unfortunately, hence writing things out manually. Could we
 -- do that via generics? I feel like that would amount to implementing n-ary 'Functor' anyway.
-instance (PrettyBy config a, PrettyBy config b, PrettyBy config c) =>
+instance (InnerPrettyBy config a, InnerPrettyBy config b, InnerPrettyBy config c) =>
             DefaultPrettyBy config (a, b, c) where
     defaultPrettyBy config (x, y, z) =
         withAttachPrettyConfig config $ \attach -> pretty (attach x, attach y, attach z)
@@ -490,8 +496,8 @@ instance (PrettyBy config a, PrettyBy config b, PrettyBy config c) =>
 instance PrettyBy config Strict.Text => DefaultPrettyBy config Char where
     defaultPrettyListBy config = prettyBy config . Strict.pack
 
-instance PrettyBy config a => DefaultPrettyBy config (Maybe a) where
-    defaultPrettyListBy config = prettyListBy config . catMaybes
+instance InnerPrettyBy config a => DefaultPrettyBy config (Maybe a) where
+    defaultPrettyListBy config = prettyListBy (InnerPrettyConfig config) . catMaybes
 
 instance PrettyBy config a => DefaultPrettyBy config [a] where
     defaultPrettyBy = prettyListBy

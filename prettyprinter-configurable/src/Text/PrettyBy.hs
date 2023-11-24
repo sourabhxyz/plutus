@@ -3,6 +3,8 @@
 module Text.PrettyBy
     ( PrettyBy (..)
     , IgnorePrettyConfig (..)
+    , InnerPrettyConfig (..)
+    , InnerPrettyBy
     , AttachPrettyConfig (..)
     , PrettyAny (..)
     , withAttachPrettyConfig
