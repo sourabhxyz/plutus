@@ -1507,8 +1507,9 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
 
     toBuiltinMeaning _semvar ConstrTermFromConstrData =
         let constrTermFromConstrDataDenotation
-                :: KnownTypeAst TyName DefaultUni sop => Data -> BuiltinResult (Opaque val sop)
-            constrTermFromConstrDataDenotation (Constr iInteger ds) = do
+                :: KnownTypeAst TyName DefaultUni sop
+                => SopOfOfData sop -> Data -> BuiltinResult (Opaque val sop)
+            constrTermFromConstrDataDenotation sopOfData (Constr iInteger ds) = do
                 -- What? Lol, surely there should exist a better way to do it. Looks like we need
                 -- to separate a big chunk of 'ReadKnown' into 'ReadKnownConstant' or something.
                 iWord64 <- either (BuiltinFailure mempty) pure . readKnown $ fromValue @val iInteger

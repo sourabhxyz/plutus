@@ -14,6 +14,7 @@
 {-# LANGUAGE BlockArguments           #-}
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ConstraintKinds          #-}
+{-# LANGUAGE DataKinds                #-}
 {-# LANGUAGE FlexibleInstances        #-}
 {-# LANGUAGE GADTs                    #-}
 {-# LANGUAGE InstanceSigs             #-}
@@ -37,9 +38,11 @@
 {-# OPTIONS_GHC -O2 #-}
 
 module PlutusCore.Default.Universe
-    ( DefaultUni (..)
+    ( SopOfData (..)
+    , DefaultUni (..)
     , pattern DefaultUniList
     , pattern DefaultUniPair
+    , pattern DefaultUniSopOfData
     , noMoreTypeFunctions
     , module Export  -- Re-exporting universes infrastructure for convenience.
     ) where
@@ -57,6 +60,7 @@ import Control.Applicative
 import Data.Bits (toIntegralSized)
 import Data.ByteString (ByteString)
 import Data.Int
+import Data.Kind qualified as GHC
 import Data.Proxy
 import Data.Text (Text)
 import Data.Word
@@ -100,6 +104,11 @@ We already allow built-in functions with polymorphic types. There might be a way
 feature and have meta-constructors as built-in functions.
 -}
 
+type SopOfData :: [[Data]] -> GHC.Type
+data SopOfData sop = SopOfData
+
+-- data family NilData ::
+
 -- See Note [Representing polymorphism].
 -- | The universe used by default.
 data DefaultUni a where
@@ -115,6 +124,8 @@ data DefaultUni a where
     DefaultUniBLS12_381_G1_Element :: DefaultUni (Esc BLS12_381.G1.Element)
     DefaultUniBLS12_381_G2_Element :: DefaultUni (Esc BLS12_381.G2.Element)
     DefaultUniBLS12_381_MlResult :: DefaultUni (Esc BLS12_381.Pairing.MlResult)
+    DefaultUniNilData :: DefaultUni (Esc ('[] @Data))
+    DefaultUniProtoSopOfData :: DefaultUni (Esc SopOfData)
 
 -- GHC infers crazy types for these two and the straightforward ones break pattern matching,
 -- so we just leave GHC with its craziness.
@@ -122,6 +133,8 @@ pattern DefaultUniList uniA =
     DefaultUniProtoList `DefaultUniApply` uniA
 pattern DefaultUniPair uniA uniB =
     DefaultUniProtoPair `DefaultUniApply` uniA `DefaultUniApply` uniB
+pattern DefaultUniSopOfData uniA =
+    DefaultUniProtoSopOfData `DefaultUniApply` uniA
 
 instance GEq DefaultUni where
     -- We define 'geq' manually instead of using 'deriveGEq', because the latter creates a single
@@ -174,6 +187,9 @@ instance GEq DefaultUni where
         geqStep DefaultUniBLS12_381_MlResult a2 = do
             DefaultUniBLS12_381_MlResult <- Just a2
             Just Refl
+        geqStep DefaultUniProtoSopOfData a2 = do
+            DefaultUniProtoSopOfData <- Just a2
+            Just Refl
         {-# INLINE geqStep #-}
 
         geqRec :: DefaultUni a1 -> DefaultUni a2 -> Maybe (a1 :~: a2)
@@ -197,6 +213,7 @@ instance ToKind DefaultUni where
     toSingKind DefaultUniBLS12_381_G1_Element = knownKind
     toSingKind DefaultUniBLS12_381_G2_Element = knownKind
     toSingKind DefaultUniBLS12_381_MlResult   = knownKind
+    toSingKind DefaultUniProtoSopOfData       = knownKind
 
 instance HasUniApply DefaultUni where
     uniApply = DefaultUniApply
@@ -221,6 +238,7 @@ instance PrettyBy RenderContext (DefaultUni a) where
         DefaultUniBLS12_381_G1_Element -> "bls12_381_G1_element"
         DefaultUniBLS12_381_G2_Element -> "bls12_381_G2_element"
         DefaultUniBLS12_381_MlResult   -> "bls12_381_mlresult"
+        DefaultUniProtoSopOfData       -> "sop_of_data"
 
 instance PrettyBy RenderContext (SomeTypeIn DefaultUni) where
     prettyBy config (SomeTypeIn uni) = prettyBy config uni
@@ -265,6 +283,8 @@ instance DefaultUni `Contains` BLS12_381.G2.Element where
     knownUni = DefaultUniBLS12_381_G2_Element
 instance DefaultUni `Contains` BLS12_381.Pairing.MlResult where
     knownUni = DefaultUniBLS12_381_MlResult
+instance DefaultUni `Contains` SopOfData where
+    knownUni = DefaultUniProtoSopOfData
 
 instance KnownBuiltinTypeAst tyname DefaultUni Integer =>
     KnownTypeAst tyname DefaultUni Integer
@@ -288,6 +308,8 @@ instance KnownBuiltinTypeAst tyname DefaultUni BLS12_381.G2.Element =>
     KnownTypeAst tyname DefaultUni BLS12_381.G2.Element
 instance KnownBuiltinTypeAst tyname DefaultUni BLS12_381.Pairing.MlResult =>
     KnownTypeAst tyname DefaultUni BLS12_381.Pairing.MlResult
+instance KnownBuiltinTypeAst tyname DefaultUni (SopOfData sop) =>
+    KnownTypeAst tyname DefaultUni (SopOfData sop)
 
 instance KnownBuiltinTypeIn DefaultUni term Integer =>
     ReadKnownIn DefaultUni term Integer
@@ -311,6 +333,8 @@ instance KnownBuiltinTypeIn DefaultUni term BLS12_381.G2.Element =>
     ReadKnownIn DefaultUni term BLS12_381.G2.Element
 instance KnownBuiltinTypeIn DefaultUni term BLS12_381.Pairing.MlResult =>
     ReadKnownIn DefaultUni term BLS12_381.Pairing.MlResult
+instance KnownBuiltinTypeIn DefaultUni term (SopOfData sop) =>
+    ReadKnownIn DefaultUni term (SopOfData sop)
 
 instance KnownBuiltinTypeIn DefaultUni term Integer =>
     MakeKnownIn DefaultUni term Integer
@@ -334,6 +358,8 @@ instance KnownBuiltinTypeIn DefaultUni term BLS12_381.G2.Element =>
     MakeKnownIn DefaultUni term BLS12_381.G2.Element
 instance KnownBuiltinTypeIn DefaultUni term BLS12_381.Pairing.MlResult =>
     MakeKnownIn DefaultUni term BLS12_381.Pairing.MlResult
+instance KnownBuiltinTypeIn DefaultUni term (SopOfData sop) =>
+    MakeKnownIn DefaultUni term (SopOfData sop)
 
 -- If this tells you an instance is missing, add it right above, following the pattern.
 instance TestTypesFromTheUniverseAreAllKnown DefaultUni
@@ -462,6 +488,7 @@ instance Closed DefaultUni where
         , constr `Permits` BLS12_381.G1.Element
         , constr `Permits` BLS12_381.G2.Element
         , constr `Permits` BLS12_381.Pairing.MlResult
+        , constr `Permits` SopOfData
         )
 
     -- See Note [Stable encoding of tags].
@@ -478,6 +505,7 @@ instance Closed DefaultUni where
     encodeUni DefaultUniBLS12_381_G1_Element = [9]
     encodeUni DefaultUniBLS12_381_G2_Element = [10]
     encodeUni DefaultUniBLS12_381_MlResult   = [11]
+    encodeUni DefaultUniProtoSopOfData       = [12]
 
     -- See Note [Decoding universes].
     -- See Note [Stable encoding of tags].
@@ -518,3 +546,5 @@ instance Closed DefaultUni where
     bring _ DefaultUniBLS12_381_G1_Element r = r
     bring _ DefaultUniBLS12_381_G2_Element r = r
     bring _ DefaultUniBLS12_381_MlResult r = r
+    -- bring p (DefaultUniProtoSopOfData `DefaultUniApply` uniA) r =
+    --     bring p uniA r
