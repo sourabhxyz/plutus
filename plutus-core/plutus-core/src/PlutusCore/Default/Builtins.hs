@@ -1841,7 +1841,7 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             {-# INLINE andByteStringDenotation #-}
         in makeBuiltinMeaning
             andByteStringDenotation
-            (runCostingFunThreeArguments . unimplementedCostingFun)
+            (runCostingFunThreeArguments . paramAndByteString)
 
     toBuiltinMeaning _semvar OrByteString =
         let orByteStringDenotation :: Bool -> BS.ByteString -> BS.ByteString -> BS.ByteString
@@ -1849,7 +1849,7 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             {-# INLINE orByteStringDenotation #-}
         in makeBuiltinMeaning
             orByteStringDenotation
-            (runCostingFunThreeArguments . unimplementedCostingFun)
+            (runCostingFunThreeArguments . paramOrByteString)
 
     toBuiltinMeaning _semvar XorByteString =
         let xorByteStringDenotation :: Bool -> BS.ByteString -> BS.ByteString -> BS.ByteString
@@ -1857,7 +1857,7 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             {-# INLINE xorByteStringDenotation #-}
         in makeBuiltinMeaning
             xorByteStringDenotation
-            (runCostingFunThreeArguments . unimplementedCostingFun)
+            (runCostingFunThreeArguments . paramXorByteString)
 
     toBuiltinMeaning _semvar ComplementByteString =
         let complementByteStringDenotation :: BS.ByteString -> BS.ByteString
@@ -1865,7 +1865,7 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             {-# INLINE complementByteStringDenotation #-}
         in makeBuiltinMeaning
             complementByteStringDenotation
-            (runCostingFunOneArgument . unimplementedCostingFun)
+            (runCostingFunOneArgument . paramComplementByteString)
 
     toBuiltinMeaning _semvar ReadBit =
         let readBitDenotation :: BS.ByteString -> Int -> BuiltinResult Bool
@@ -1873,7 +1873,7 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             {-# INLINE readBitDenotation #-}
         in makeBuiltinMeaning
             readBitDenotation
-            (runCostingFunTwoArguments . unimplementedCostingFun)
+            (runCostingFunTwoArguments . paramReadBit)
 
     toBuiltinMeaning _semvar WriteBits =
         let writeBitsDenotation :: BS.ByteString -> [(Integer, Bool)] -> BuiltinResult BS.ByteString
@@ -1881,15 +1881,15 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             {-# INLINE writeBitsDenotation #-}
         in makeBuiltinMeaning
             writeBitsDenotation
-            (runCostingFunTwoArguments . unimplementedCostingFun)
+            (runCostingFunTwoArguments . paramWriteBits)
 
     toBuiltinMeaning _semvar ReplicateByte =
         let replicateByteDenotation :: Int -> Word8 -> BuiltinResult BS.ByteString
             replicateByteDenotation = Bitwise.replicateByte
             {-# INLINE replicateByteDenotation #-}
         in makeBuiltinMeaning
-            replicateByteDenotation
-            (runCostingFunTwoArguments . unimplementedCostingFun)
+            byteStringReplicateDenotation
+            (runCostingFunTwoArguments . paramReplicateByteString)
 
     -- Bitwise
 

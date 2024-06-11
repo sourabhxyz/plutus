@@ -599,6 +599,7 @@ data ModelThreeArguments =
   | ModelThreeArgumentsLinearInZ             OneVariableLinearFunction
   | ModelThreeArgumentsQuadraticInZ          OneVariableQuadraticFunction
   | ModelThreeArgumentsLiteralInYOrLinearInZ OneVariableLinearFunction
+  | ModelThreeArgumentsLinearInMaxYZ         OneVariableLinearFunction
     deriving stock (Show, Eq, Generic, Lift)
     deriving anyclass (NFData)
 
@@ -642,10 +643,16 @@ runThreeArgumentModel
 runThreeArgumentModel
     (ModelThreeArgumentsLiteralInYOrLinearInZ (OneVariableLinearFunction intercept slope)) =
         lazy $ \_ costs2 costs3 ->
-            let width = sumCostStream costs2
+            let !width = sumCostStream costs2
             in if width == 0
             then scaleLinearly intercept slope costs3
             else costs2
+runThreeArgumentModel
+    (ModelThreeArgumentsLinearInMaxYZ (OneVariableLinearFunction intercept slope)) =
+        lazy $ \_ costs2 costs3 ->
+            let !size2 = sumCostStream costs2
+                !size3 = sumCostStream costs3
+            in scaleLinearly intercept slope $ CostLast (max size2 size3)
 {-# NOINLINE runThreeArgumentModel #-}
 
 -- See Note [runCostingFun* API].

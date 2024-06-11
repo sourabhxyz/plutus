@@ -150,4 +150,13 @@ builtinMemoryModels = BuiltinCostModelBase
   -- a special memory costing function to handle that.
   , paramIntegerToByteString             = Id $ ModelThreeArgumentsLiteralInYOrLinearInZ $ OneVariableLinearFunction 0 1
   , paramByteStringToInteger             = Id $ ModelTwoArgumentsLinearInY $ OneVariableLinearFunction 0 1
+  -- andByteString b y z etc. return something whose length is min(length(y),length(z)) if b is
+  -- False, max (...) otherwise.  For the time being we conservatively assume max in all cases.
+  , paramAndByteString                   = Id $ ModelThreeArgumentsLinearInMaxYZ $ OneVariableLinearFunction 0 1
+  , paramOrByteString                    = Id $ ModelThreeArgumentsLinearInMaxYZ $ OneVariableLinearFunction 0 1
+  , paramXorByteString                   = Id $ ModelThreeArgumentsLinearInMaxYZ $ OneVariableLinearFunction 0 1
+  , paramComplementByteString            = Id $ ModelOneArgumentLinearInX $ OneVariableLinearFunction 0 1
+  , paramReadBit                         = Id $ ModelTwoArgumentsConstantCost 1
+  , paramWriteBits                       = Id $ ModelTwoArgumentsLinearInX $ OneVariableLinearFunction 0 1
+  , paramReplicateByteString             = undefined -- Literally x bytes
   }

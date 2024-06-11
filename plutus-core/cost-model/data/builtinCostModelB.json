@@ -933,5 +933,117 @@
             "arguments": 10,
             "type": "constant_cost"
         }
+    },
+    "andByteString": {
+        "cpu": {
+            "arguments": {
+                "intercept": 100788,
+                "slope": 420
+            },
+            "type": "linear_in_z"
+        },
+        "memory": {
+            "arguments": {
+                "intercept": 1,
+                "slope": 1
+            },
+            "type": "linear_in_z"
+        }
+    },
+    "orByteString": {
+        "cpu": {
+            "arguments": {
+                "intercept": 100788,
+                "slope": 420
+            },
+            "type": "linear_in_z"
+        },
+        "memory": {
+            "arguments": {
+                "intercept": 1,
+                "slope": 1
+            },
+            "type": "linear_in_z"
+        }
+    },
+    "xorByteString": {
+        "cpu": {
+            "arguments": {
+                "intercept": 100788,
+                "slope": 420
+            },
+            "type": "linear_in_z"
+        },
+        "memory": {
+            "arguments": {
+                "intercept": 1,
+                "slope": 1
+            },
+            "type": "linear_in_z"
+        }
+    },
+    "complementByteString": {
+        "cpu": {
+            "arguments": {
+                "intercept": 100788,
+                "slope": 420
+            },
+            "type": "linear_in_x"
+        },
+        "memory": {
+            "arguments": {
+                "intercept": 1,
+                "slope": 1
+            },
+            "type": "linear_in_x"
+        }
+    },
+    "readBit": {
+        "cpu": {
+            "arguments": {
+                "intercept": 100788,
+                "slope": 420
+            },
+            "type": "linear_in_y"
+        },
+        "memory": {
+            "arguments": {
+                "intercept": 1,
+                "slope": 1
+            },
+            "type": "linear_in_x"
+        }
+    },
+    "writeBits": {
+        "cpu": {
+            "arguments": {
+                "intercept": 100788,
+                "slope": 420
+            },
+            "type": "linear_in_y"
+        },
+        "memory": {
+            "arguments": {
+                "intercept": 1,
+                "slope": 1
+            },
+            "type": "linear_in_x"
+        }
+    },
+    "replicateByteString": {
+        "cpu": {
+            "arguments": {
+                "intercept": 100788,
+                "slope": 420
+            },
+            "type": "linear_in_x"
+        },
+        "memory": {
+            "arguments": {
+                "intercept": 1,
+                "slope": 1
+            },
+            "type": "linear_in_x"
+        }
     }
 }

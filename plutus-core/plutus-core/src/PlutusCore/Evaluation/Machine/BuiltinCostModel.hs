@@ -169,6 +169,13 @@ data BuiltinCostModelBase f =
     -- Bitwise operations
     , paramIntegerToByteString             :: f ModelThreeArguments
     , paramByteStringToInteger             :: f ModelTwoArguments
+    , paramAndByteString                   :: f ModelThreeArguments
+    , paramOrByteString                    :: f ModelThreeArguments
+    , paramXorByteString                   :: f ModelThreeArguments
+    , paramComplementByteString            :: f ModelOneArgument
+    , paramReadBit                         :: f ModelTwoArguments
+    , paramWriteBits                       :: f ModelTwoArguments
+    , paramReplicateByteString             :: f ModelTwoArguments
     }
     deriving stock (Generic)
     deriving anyclass (FunctorB, TraversableB, ConstraintsB)
