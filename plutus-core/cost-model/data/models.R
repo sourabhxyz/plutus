@@ -742,7 +742,15 @@ modelFun <- function(path) {
         mk.result(m, "quadratic_in_y")
     }
 
-    ##### Models to be returned to Haskell #####
+    andByteStringModel        <- NA       
+    orByteStringModel         <- andByteStringModel
+    xorByteStringModel        <- andByteStringModel
+    complementByteStringModel <- NA
+    readBitModel              <- NA
+    writeBitsModel            <- NA
+    replicateByteStringModel  <- NA
+
+##### Models to be returned to Haskell #####
 
     models.for.adjustment <-
         list (
@@ -816,7 +824,14 @@ modelFun <- function(path) {
         bls12_381_mulMlResultModel           = bls12_381_mulMlResultModel,
         bls12_381_finalVerifyModel           = bls12_381_finalVerifyModel,
         integerToByteStringModel             = integerToByteStringModel,
-        byteStringToIntegerModel             = byteStringToIntegerModel
+        byteStringToIntegerModel             = byteStringToIntegerModel,
+        andByteStringModel                   = andByteStringModel,
+        orByteStringModel                    = orByteStringModel,
+        xorByteStringModel                   = xorByteStringModel,
+        complementByteStringModel            = complementByteStringModel,
+        readBitModel                         = readBitModel,
+        writeBitsModel                       = writeBitsModel,
+        replicateByteStringModel             = replicateByteStringModel
         )
 
     ## The integer division functions have a complex costing behaviour that requires some negative
