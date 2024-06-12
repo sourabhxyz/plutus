@@ -76,8 +76,39 @@ benchIntegerToByteString =
 
     in createBench $ zip3 (repeat True) widths inputs
 
+benchAndByteString :: Benchmark
+benchAndByteString = undefined
+-- Benchmark with equal-sized inputs: it should be linear in the size.
+-- Initially check what happens for different-sized inputs with padding and
+-- truncation.  Presumably both of these will be bounded by the same-size case.
+
+
+benchComplementByteString :: Benchmark
+benchComplementByteString = undefined
+-- This should be a straightforward liear function of the size.
+
+benchReadBit :: Benchmark
+benchReadBit = undefined
+-- Linear in length and/or position?  Maybe pretty much constant time.
+
+benchWriteBits :: Benchmark
+benchWriteBits = undefined
+-- The function uses pokeByteOff, which updates a byte in place, presumably in
+-- constant time.  If readBit is constant time then this should be linear in the
+-- size of the second argument.
+
+benchReplicateByteString :: Benchmark
+benchReplicateByteString = undefined
+-- This will be linear in the first argument (the number of replications), but
+-- may appear constant time.
+
 makeBenchmarks :: [Benchmark]
 makeBenchmarks =
     [ benchByteStringToInteger
     , benchIntegerToByteString
+    , benchAndByteString
+    , benchComplementByteString
+    , benchReadBit
+    , benchWriteBits
+    , benchReplicateByteString
     ]

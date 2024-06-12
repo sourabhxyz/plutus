@@ -67,6 +67,7 @@ data Model
     | LinearInY             LinearFunction
     | LinearInZ             LinearFunction
     | LiteralInYOrLinearInZ LinearFunction
+    | LiteralInX
     | QuadraticInY          OneVariableQuadraticFunction
     | QuadraticInZ          OneVariableQuadraticFunction
     | QuadraticInXAndY      TwoVariableQuadraticFunction
@@ -109,6 +110,7 @@ instance FromJSON Model where
                "linear_in_x"                 -> LinearInX             <$> parseJSON args
                "linear_in_y"                 -> LinearInY             <$> parseJSON args
                "linear_in_z"                 -> LinearInZ             <$> parseJSON args
+               "literal_in_x"                -> pure LiteralInX
                "quadratic_in_y"              -> QuadraticInY          <$> parseJSON args
                "quadratic_in_z"              -> QuadraticInZ          <$> parseJSON args
                "quadratic_in_x_and_y"        -> QuadraticInXAndY      <$> parseJSON args

@@ -66,6 +66,7 @@ renderModel =
      LinearInX             f   -> [ renderLinearFunction f "x" ]
      LinearInY             f   -> [ renderLinearFunction f "y" ]
      LinearInZ             f   -> [ renderLinearFunction f "z" ]
+     LiteralInX                -> [ printf "x bytes" ]
      QuadraticInY          f   -> [ renderOneVariableQuadraticFunction f "y" ]
      QuadraticInZ          f   -> [ renderOneVariableQuadraticFunction f "z" ]
      QuadraticInXAndY      f   -> [ renderTwoVariableQuadraticFunction f "x" "y" ]

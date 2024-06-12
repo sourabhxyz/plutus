@@ -112,6 +112,13 @@ builtinCostModelNames = BuiltinCostModelBase
   , paramKeccak_256                      = "keccak_256Model"
   , paramIntegerToByteString             = "integerToByteStringModel"
   , paramByteStringToInteger             = "byteStringToIntegerModel"
+  , paramAndByteString                   = "andByteStringModel"
+  , paramOrByteString                    = "orBytesStringModel"
+  , paramXorByteString                   = "xorByteStringModel"
+  , paramComplementByteString            = "complementByteStringModel"
+  , paramReadBit                         = "readBitModel"
+  , paramWriteBits                       = "writeBitsModel"
+  , paramReplicateByteString             = "replicateByteStringModel"
   }
 
 
@@ -238,6 +245,13 @@ createBuiltinCostModel bmfile rfile = do
   -- Bitwise operations
   paramByteStringToInteger             <- getParams readCF2 paramByteStringToInteger
   paramIntegerToByteString             <- getParams readCF3 paramIntegerToByteString
+  paramAndByteString                   <- getParams readCF3 paramAndByteString
+  paramOrByteString                    <- getParams readCF3 paramOrByteString
+  paramXorByteString                   <- getParams readCF3 paramXorByteString
+  paramComplementByteString            <- getParams readCF1 paramComplementByteString
+  paramReadBit                         <- getParams readCF2 paramReadBit
+  paramWriteBits                       <- getParams readCF2 paramWriteBits
+  paramReplicateByteString             <- getParams readCF2 paramReplicateByteString
 
   pure $ BuiltinCostModelBase {..}
 

@@ -451,6 +451,7 @@ data ModelTwoArguments =
   | ModelTwoArgumentsConstBelowDiagonal  ModelConstantOrTwoArguments
   | ModelTwoArgumentsQuadraticInY        OneVariableQuadraticFunction
   | ModelTwoArgumentsQuadraticInXAndY    TwoVariableQuadraticFunction
+  | ModelTwoArgumentsLiteralInX
     deriving stock (Show, Eq, Generic, Lift)
     deriving anyclass (NFData)
 
@@ -586,6 +587,9 @@ runTwoArgumentModel
              let !size1 = sumCostStream costs1
                  !size2 = sumCostStream costs2
              in CostLast $ evaluateTwoVariableQuadraticFunction f size1 size2
+runTwoArgumentModel
+    ModelTwoArgumentsLiteralInX =
+        lazy $ \costs1 _ -> costs1
 {-# NOINLINE runTwoArgumentModel #-}
 
 

@@ -590,12 +590,12 @@ writeBits bs changelist = case unsafeDupablePerformIO . try $ go of
           pokeByteOff ptr flipIx toWrite
 
 -- | Byte replication, as per [CIP-122](https://github.com/cardano-foundation/CIPs/tree/master/CIP-0122)
-replicateByte :: Int -> Word8 -> BuiltinResult ByteString
+replicateByte :: Integer -> Word8 -> BuiltinResult ByteString
 replicateByte len w8
   | len < 0 = do
       emit "replicateByte: negative length requested"
       evaluationFailure
-  | otherwise = pure . BS.replicate len $ w8
+  | otherwise = pure . BS.replicate (fromIntegral len) $ w8
 
 {- Note [Shift and rotation implementation]
 
