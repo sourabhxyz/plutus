@@ -417,5 +417,16 @@ main =
               -- Bitwise operations
               , $(genTest 3 "integerToByteString")
               , $(genTest 2 "byteStringToInteger") Everywhere
+              , $(genTest 3 "andByteString")
+              , $(genTest 3 "orByteString")
+              , $(genTest 3 "xorByteString")
+              , $(genTest 1 "complementByteString")
+              , $(genTest 2 "readBit")             Everywhere
+              , $(genTest 2 "writeBits")           Everywhere
+              , $(genTest 2 "replicateByte")       Everywhere
+              , $(genTest 2 "shiftByteString")     Everywhere
+              , $(genTest 2 "rotateByteString")    Everywhere
+              , $(genTest 1 "countSetBits")
+              , $(genTest 1 "findFirstSetBit")
               ]
 

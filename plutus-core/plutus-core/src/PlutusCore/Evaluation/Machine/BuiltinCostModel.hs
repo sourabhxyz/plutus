@@ -176,6 +176,10 @@ data BuiltinCostModelBase f =
     , paramReadBit                         :: f ModelTwoArguments
     , paramWriteBits                       :: f ModelTwoArguments
     , paramReplicateByte                   :: f ModelTwoArguments
+    , paramShiftByteString                 :: f ModelTwoArguments
+    , paramRotateByteString                :: f ModelTwoArguments
+    , paramCountSetBits                    :: f ModelOneArgument
+    , paramFindFirstSetBit                 :: f ModelOneArgument
     }
     deriving stock (Generic)
     deriving anyclass (FunctorB, TraversableB, ConstraintsB)

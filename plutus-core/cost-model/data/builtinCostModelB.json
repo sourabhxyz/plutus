@@ -1045,5 +1045,45 @@
             },
             "type": "linear_in_x"
         }
+    },
+    "shiftByteString": {
+        "cpu": {
+            "arguments": 1000000,
+            "type": "constant_cost"
+        },
+        "memory": {
+            "arguments": 1000000,
+            "type": "constant_cost"
+        }
+    },
+    "rotateByteString": {
+        "cpu": {
+            "arguments": 1000000,
+            "type": "constant_cost"
+        },
+        "memory": {
+            "arguments": 1000000,
+            "type": "constant_cost"
+        }
+    },
+    "countSetBits": {
+        "cpu": {
+            "arguments": 1000000,
+            "type": "constant_cost"
+        },
+        "memory": {
+            "arguments": 1000000,
+            "type": "constant_cost"
+        }
+    },
+    "findFirstSetBit": {
+        "cpu": {
+            "arguments": 1000000,
+            "type": "constant_cost"
+        },
+        "memory": {
+            "arguments": 1000000,
+            "type": "constant_cost"
+        }
     }
 }

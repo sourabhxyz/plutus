@@ -1900,7 +1900,7 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             {-# INLINE shiftByteStringDenotation #-}
         in makeBuiltinMeaning
             shiftByteStringDenotation
-            (runCostingFunTwoArguments . unimplementedCostingFun)
+            (runCostingFunTwoArguments . paramShiftByteString)
 
     toBuiltinMeaning _semvar RotateByteString =
         let rotateByteStringDenotation :: BS.ByteString -> Int -> BS.ByteString
@@ -1908,7 +1908,7 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             {-# INLINE rotateByteStringDenotation #-}
         in makeBuiltinMeaning
             rotateByteStringDenotation
-            (runCostingFunTwoArguments . unimplementedCostingFun)
+            (runCostingFunTwoArguments . paramRotateByteString)
 
     toBuiltinMeaning _semvar CountSetBits =
         let countSetBitsDenotation :: BS.ByteString -> Int
@@ -1916,7 +1916,7 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             {-# INLINE countSetBitsDenotation #-}
         in makeBuiltinMeaning
             countSetBitsDenotation
-            (runCostingFunOneArgument . unimplementedCostingFun)
+            (runCostingFunOneArgument . paramCountSetBits)
 
     toBuiltinMeaning _semvar FindFirstSetBit =
         let findFirstSetBitDenotation :: BS.ByteString -> Int
@@ -1924,7 +1924,7 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             {-# INLINE findFirstSetBitDenotation #-}
         in makeBuiltinMeaning
             findFirstSetBitDenotation
-            (runCostingFunOneArgument . unimplementedCostingFun)
+            (runCostingFunOneArgument . paramFindFirstSetBit)
 
     -- See Note [Inlining meanings of builtins].
     {-# INLINE toBuiltinMeaning #-}

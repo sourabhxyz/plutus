@@ -131,7 +131,18 @@ arity <- function(name) {
         "Keccak_256" = 1,
         "Blake2b_224" = 1,
         "IntegerToByteString" = 3,
-        "ByteStringToInteger" = 2
+        "ByteStringToInteger" = 2,
+        "AndByteString" = 3,
+        "OrByteString" = 3,
+        "XorByteString" = 3,
+        "ComplementByteString" = 1,
+        "ReadBit" = 2,
+        "WriteBits" = 2,
+        "ReplicateByte" = 2,
+        "ShiftByteString" = 2,
+        "RotateByteString" = 2,
+        "CountSetBits" = 1,
+        "FindFirstSetBit" = 1
         )
 }
 
@@ -742,13 +753,18 @@ modelFun <- function(path) {
         mk.result(m, "quadratic_in_y")
     }
 
-    andByteStringModel        <- NA       
+    andByteStringModel        <- NA
     orByteStringModel         <- andByteStringModel
     xorByteStringModel        <- andByteStringModel
     complementByteStringModel <- NA
     readBitModel              <- NA
     writeBitsModel            <- NA
     replicateByteModel        <- NA
+    shiftByteStringModel      <- NA
+    rotateByteStringModel     <- NA
+    countSetBitsModel         <- NA
+    findFirstSetBitModel      <- NA
+
 
 ##### Models to be returned to Haskell #####
 
@@ -831,7 +847,11 @@ modelFun <- function(path) {
         complementByteStringModel            = complementByteStringModel,
         readBitModel                         = readBitModel,
         writeBitsModel                       = writeBitsModel,
-        replicateByteModel                   = replicateByteModel
+        replicateByteModel                   = replicateByteModel,
+        shiftByteStringModel                 = shiftByteStringModel,
+        rotateByteStringModel                = rotateByteStringModel,
+        countSetBitsModel                    = countSetBitsModel,
+        findFirstSetBitModel                 = findFirstSetBitModel
         )
 
     ## The integer division functions have a complex costing behaviour that requires some negative

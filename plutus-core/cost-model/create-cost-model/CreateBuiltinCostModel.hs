@@ -113,12 +113,16 @@ builtinCostModelNames = BuiltinCostModelBase
   , paramIntegerToByteString             = "integerToByteStringModel"
   , paramByteStringToInteger             = "byteStringToIntegerModel"
   , paramAndByteString                   = "andByteStringModel"
-  , paramOrByteString                    = "orBytesStringModel"
+  , paramOrByteString                    = "orByteStringModel"
   , paramXorByteString                   = "xorByteStringModel"
   , paramComplementByteString            = "complementByteStringModel"
   , paramReadBit                         = "readBitModel"
   , paramWriteBits                       = "writeBitsModel"
   , paramReplicateByte                   = "replicateByteModel"
+  , paramShiftByteString                 = "shiftByteStringModel"
+  , paramRotateByteString                = "rotateByteStringModel"
+  , paramCountSetBits                    = "countSetBitsModel"
+  , paramFindFirstSetBit                 = "findFirstSetBitModel"
   }
 
 
@@ -252,6 +256,10 @@ createBuiltinCostModel bmfile rfile = do
   paramReadBit                         <- getParams readCF2 paramReadBit
   paramWriteBits                       <- getParams readCF2 paramWriteBits
   paramReplicateByte                   <- getParams readCF2 paramReplicateByte
+  paramShiftByteString                 <- getParams readCF2 paramShiftByteString
+  paramRotateByteString                <- getParams readCF2 paramRotateByteString
+  paramCountSetBits                    <- getParams readCF1 paramCountSetBits
+  paramFindFirstSetBit                 <- getParams readCF1 paramFindFirstSetBit
 
   pure $ BuiltinCostModelBase {..}
 
