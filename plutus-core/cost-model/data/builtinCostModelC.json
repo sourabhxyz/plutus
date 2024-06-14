@@ -1058,6 +1058,8 @@
         },
         "memory": {
             "arguments": {
+                "intercept": 1,
+                "slope": 1
             },
             "type": "literal_in_x"
         }

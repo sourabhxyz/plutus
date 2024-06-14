@@ -158,11 +158,13 @@ builtinMemoryModels = BuiltinCostModelBase
   , paramComplementByteString            = Id $ ModelOneArgumentLinearInX identityFunction
   , paramReadBit                         = Id $ ModelTwoArgumentsConstantCost 1
   , paramWriteBits                       = Id $ ModelTwoArgumentsLinearInX identityFunction
-  , paramReplicateByte                   = Id ModelTwoArgumentsLiteralInX
+  -- The empty bytestring has memory usage 0 (it should probably be 1), so we add an extra memory
+  -- unit here to make sure that its memory cost is always nonzero.
+  , paramReplicateByte                   = Id $ ModelTwoArgumentsLiteralInX $ OneVariableLinearFunction 1 1
   , paramShiftByteString                 = Id $ ModelTwoArgumentsLinearInX identityFunction
   , paramRotateByteString                = Id $ ModelTwoArgumentsLinearInX identityFunction
   , paramCountSetBits                    = Id $ ModelOneArgumentConstantCost 1
   , paramFindFirstSetBit                 = Id $ ModelOneArgumentConstantCost 1
   }
-  where identityFunction = identityFunction
+  where identityFunction = OneVariableLinearFunction 0 1
 
