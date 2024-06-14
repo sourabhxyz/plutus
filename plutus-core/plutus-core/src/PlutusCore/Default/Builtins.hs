@@ -1885,7 +1885,7 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
 
     toBuiltinMeaning _semvar ReplicateByte =
         let replicateByteDenotation :: LiteralByteSize -> Word8 -> BuiltinResult BS.ByteString
-            replicateByteDenotation (LiteralByteSize n) w = Logical.replicateByte n w
+            replicateByteDenotation (LiteralByteSize n) w = Bitwise.replicateByte n w
             -- FIXME: be careful about the coercion inreplicateByte
             {-# INLINE replicateByteDenotation #-}
         in makeBuiltinMeaning

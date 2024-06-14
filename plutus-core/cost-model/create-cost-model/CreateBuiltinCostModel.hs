@@ -118,7 +118,7 @@ builtinCostModelNames = BuiltinCostModelBase
   , paramComplementByteString            = "complementByteStringModel"
   , paramReadBit                         = "readBitModel"
   , paramWriteBits                       = "writeBitsModel"
-  , paramReplicateByteString             = "replicateByteStringModel"
+  , paramReplicateByte                   = "replicateByteModel"
   }
 
 
@@ -251,7 +251,7 @@ createBuiltinCostModel bmfile rfile = do
   paramComplementByteString            <- getParams readCF1 paramComplementByteString
   paramReadBit                         <- getParams readCF2 paramReadBit
   paramWriteBits                       <- getParams readCF2 paramWriteBits
-  paramReplicateByteString             <- getParams readCF2 paramReplicateByteString
+  paramReplicateByte                   <- getParams readCF2 paramReplicateByte
 
   pure $ BuiltinCostModelBase {..}
 

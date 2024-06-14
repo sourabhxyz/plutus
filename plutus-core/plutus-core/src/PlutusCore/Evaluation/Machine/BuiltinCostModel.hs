@@ -175,7 +175,7 @@ data BuiltinCostModelBase f =
     , paramComplementByteString            :: f ModelOneArgument
     , paramReadBit                         :: f ModelTwoArguments
     , paramWriteBits                       :: f ModelTwoArguments
-    , paramReplicateByteString             :: f ModelTwoArguments
+    , paramReplicateByte                   :: f ModelTwoArguments
     }
     deriving stock (Generic)
     deriving anyclass (FunctorB, TraversableB, ConstraintsB)

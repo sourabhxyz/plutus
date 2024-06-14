@@ -336,7 +336,7 @@ unitCostBuiltinCostModel = BuiltinCostModelBase
     , paramComplementByteString            = unitCostOneArgument
     , paramReadBit                         = unitCostTwoArguments
     , paramWriteBits                       = unitCostTwoArguments
-    , paramReplicateByteString             = unitCostTwoArguments
+    , paramReplicateByte                   = unitCostTwoArguments
     }
 
 unitCekParameters :: Typeable ann => MachineParameters CekMachineCosts DefaultFun (CekValue DefaultUni DefaultFun ann)

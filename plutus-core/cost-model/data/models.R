@@ -748,7 +748,7 @@ modelFun <- function(path) {
     complementByteStringModel <- NA
     readBitModel              <- NA
     writeBitsModel            <- NA
-    replicateByteStringModel  <- NA
+    replicateByteModel        <- NA
 
 ##### Models to be returned to Haskell #####
 
@@ -831,7 +831,7 @@ modelFun <- function(path) {
         complementByteStringModel            = complementByteStringModel,
         readBitModel                         = readBitModel,
         writeBitsModel                       = writeBitsModel,
-        replicateByteStringModel             = replicateByteStringModel
+        replicateByteModel                   = replicateByteModel
         )
 
     ## The integer division functions have a complex costing behaviour that requires some negative

@@ -1048,7 +1048,7 @@
             "type": "linear_in_x"
         }
     },
-    "replicateByteString": {
+    "replicateByte": {
         "cpu": {
             "arguments": {
                 "intercept": 100788,

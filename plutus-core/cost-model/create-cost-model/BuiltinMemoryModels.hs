@@ -158,5 +158,5 @@ builtinMemoryModels = BuiltinCostModelBase
   , paramComplementByteString            = Id $ ModelOneArgumentLinearInX $ OneVariableLinearFunction 0 1
   , paramReadBit                         = Id $ ModelTwoArgumentsConstantCost 1
   , paramWriteBits                       = Id $ ModelTwoArgumentsLinearInX $ OneVariableLinearFunction 0 1
-  , paramReplicateByteString             = Id ModelTwoArgumentsLiteralInX
+  , paramReplicateByte                   = Id ModelTwoArgumentsLiteralInX
   }
