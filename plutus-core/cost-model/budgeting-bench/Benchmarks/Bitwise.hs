@@ -102,6 +102,22 @@ benchReplicateByteString = undefined
 -- This will be linear in the first argument (the number of replications), but
 -- may appear constant time.
 
+benchShiftByteString :: Benchmark
+benchShiftByteString = undefined
+-- Linear in both arguments?
+
+benchRotateByteString :: Benchmark
+benchRotateByteString = undefined
+-- Linear in both arguments?
+
+benchCountSetBits :: Benchmark
+benchCountSetBits = undefined
+-- This will presumably be linear in the size of the argument.
+
+benchFindFirstSetBit :: Benchmark
+benchFindFirstSetBit = undefined
+-- This will presumably be linear in the size of the argument.
+
 makeBenchmarks :: [Benchmark]
 makeBenchmarks =
     [ benchByteStringToInteger
@@ -111,4 +127,8 @@ makeBenchmarks =
     , benchReadBit
     , benchWriteBits
     , benchReplicateByteString
+    , benchShiftByteString
+    , benchRotateByteString
+    , benchCountSetBits
+    , benchFindFirstSetBit
     ]
