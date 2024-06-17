@@ -11,6 +11,7 @@ module PlutusCore.Evaluation.Machine.ExMemoryUsage
     , ExMemoryUsage(..)
     , flattenCostRose
     , LiteralByteSize(..)
+    , LiteralInteger(..)
     ) where
 
 import PlutusCore.Crypto.BLS12_381.G1 as BLS12_381.G1
@@ -181,6 +182,11 @@ instance ExMemoryUsage () where
 newtype LiteralByteSize = LiteralByteSize { unLiteralByteSize :: Integer }
 instance ExMemoryUsage LiteralByteSize where
     memoryUsage (LiteralByteSize n) = singletonRose . fromIntegral $ ((n-1) `div` 8) + 1
+    {-# INLINE memoryUsage #-}
+
+newtype LiteralInteger = LiteralInteger { unLiteralInteger :: Integer }
+instance ExMemoryUsage LiteralInteger where
+    memoryUsage (LiteralInteger n) = singletonRose . fromIntegral $ abs n
     {-# INLINE memoryUsage #-}
 
 -- | Calculate a 'CostingInteger' for the given 'Integer'.

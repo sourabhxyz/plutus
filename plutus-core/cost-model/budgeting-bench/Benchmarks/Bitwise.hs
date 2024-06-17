@@ -1,5 +1,6 @@
 -- editorconfig-checker-disable-file
 
+{-# LANGUAGE BangPatterns  #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Benchmarks.Bitwise (makeBenchmarks) where
@@ -17,10 +18,27 @@ import Hedgehog qualified as H
 
 ---------------- ByteString builtins ----------------
 
+largeSampleNum :: Int
+largeSampleNum = 160
+
+largeSampleSizes :: [Int]
+largeSampleSizes = [1..largeSampleNum]
+
 -- Smallish bytestring inputs: 150 entries.  Note that the length of a
 -- bytestring is eight times the size.
-smallerByteStrings150 :: H.Seed -> [BS.ByteString]
-smallerByteStrings150 seed = makeSizedByteStrings seed [1..150]
+largeSample :: H.Seed -> [BS.ByteString]
+largeSample seed = makeSizedByteStrings seed largeSampleSizes
+
+smallSampleNum :: Int
+smallSampleNum = 40
+
+smallSampleSizes :: [Int]
+smallSampleSizes = fmap (10 *) [1..smallSampleNum]
+
+-- Smallish bytestring inputs: 150 entries.  Note that the length of a
+-- bytestring is eight times the size.
+smallSample :: H.Seed -> [BS.ByteString]
+smallSample seed = makeSizedByteStrings seed smallSampleSizes
 
 -- Make an integer of size n which encodes to 0xFF...FF
 allFF :: Int -> Integer
@@ -36,7 +54,7 @@ allFF n = 256^(8*n) - 1
    larger inputs. -}
 benchByteStringToInteger :: Benchmark
 benchByteStringToInteger =  createTwoTermBuiltinBenchElementwise ByteStringToInteger []
-                            (repeat True) (smallerByteStrings150 seedA)
+                            (repeat True) (largeSample seedA)
 
 
 ------------------------- IntegerToByteString -------------------------
@@ -60,7 +78,7 @@ benchByteStringToInteger =  createTwoTermBuiltinBenchElementwise ByteStringToInt
 benchIntegerToByteString :: Benchmark
 benchIntegerToByteString =
     let b = IntegerToByteString
-        widths = [1..150]
+        widths = largeSampleSizes
         inputs = fmap allFF widths
         -- This is like createThreeTermBuiltinBenchElementwise, but we want to
         -- make sure that the width appears literally in the benchmark name.
@@ -76,59 +94,196 @@ benchIntegerToByteString =
 
     in createBench $ zip3 (repeat True) widths inputs
 
-benchAndByteString :: Benchmark
-benchAndByteString = undefined
 -- Benchmark with equal-sized inputs: it should be linear in the size.
 -- Initially check what happens for different-sized inputs with padding and
 -- truncation.  Presumably both of these will be bounded by the same-size case.
+benchAndByteStringFalse :: Benchmark
+benchAndByteStringFalse =
+  let b = AndByteString
+      xs = smallSample seedA
+      ys = smallSample seedB
+      in createTwoTermBuiltinBenchWithNameAndFlag "AndByteStringFalse" b [] False xs ys
 
+benchAndByteStringTrue :: Benchmark
+benchAndByteStringTrue =
+  let b = AndByteString
+      xs = smallSample seedA
+      ys = smallSample seedB
+      in createTwoTermBuiltinBenchWithNameAndFlag "AndByteStringTrue" b [] True xs ys
 
-benchComplementByteString :: Benchmark
-benchComplementByteString = undefined
 -- This should be a straightforward liear function of the size.
+benchComplementByteString :: Benchmark
+benchComplementByteString =
+  let xs = largeSample seedA
+  in createOneTermBuiltinBench ComplementByteString [] xs
 
-benchReadBit :: Benchmark
-benchReadBit = undefined
 -- Linear in length and/or position?  Maybe pretty much constant time.
+benchReadBitFirst :: Benchmark
+benchReadBitFirst =
+  let xs = largeSample seedA
+      ys :: [Integer] = replicate largeSampleNum 0
+  in createTwoTermBuiltinBenchElementwiseWithName "ReadBitFirst" ReadBit [] xs ys
 
-benchWriteBits :: Benchmark
-benchWriteBits = undefined
+-- Linear in length and/or position?  Maybe pretty much constant time.
+benchReadBitLast :: Benchmark
+benchReadBitLast =
+  let xs = largeSample seedA
+      ys :: [Integer] = fmap (\n -> fromIntegral $ 8*n-1) largeSampleSizes
+  in createTwoTermBuiltinBenchElementwiseWithName "ReadBitLast" ReadBit [] xs ys
+
 -- The function uses pokeByteOff, which updates a byte in place, presumably in
 -- constant time.  If readBit is constant time then this should be linear in the
 -- size of the second argument.
 
-benchReplicateByteString :: Benchmark
-benchReplicateByteString = undefined
+benchWriteBitsFirst :: Benchmark
+benchWriteBitsFirst =
+  let xs = smallSample seedA
+      ys = fmap (\n -> replicate n (0::Integer,True)) smallSampleSizes
+  in createTwoTermBuiltinBenchWithName "WriteBitsFirst" WriteBits [] xs ys
+
+-- For each n we create a bytestring of length n and then for each
+-- of those we create a list of pairs which write 1 into the highest
+-- bit.  Stricly the actual length of the list should be the size measure,
+-- but the size will be a reasonable proxy.
+benchWriteBitsLast :: Benchmark
+benchWriteBitsLast =
+  let xs0 = smallSample seedA
+      xs = concat $ fmap (replicate smallSampleNum) xs0
+      mkYs x =
+        let n = fromIntegral $ BS.length x :: Integer
+        in fmap (\s -> replicate s (8*n-1 :: Integer, True)) smallSampleSizes
+      ys = concat $ fmap mkYs xs0
+      !_ = if length xs /= length ys then error "mismatch" else ()
+  in createTwoTermBuiltinBenchElementwiseWithName "WriteBitsLast" WriteBits [] xs ys
+
 -- This will be linear in the first argument (the number of replications), but
 -- may appear constant time.
+benchReplicateByte :: Benchmark
+benchReplicateByte =
+  let ys = replicate largeSampleNum (0xFF :: Integer)
+  in createTwoTermBuiltinBenchElementwiseLiteralInX ReplicateByte []
+       (fmap (fromIntegral . (8*)) largeSampleSizes) ys
 
-benchShiftByteString :: Benchmark
-benchShiftByteString = undefined
--- Linear in both arguments?
+-- Second batch
 
-benchRotateByteString :: Benchmark
-benchRotateByteString = undefined
--- Linear in both arguments?
+shifts :: [Int]
+shifts = [1..smallSampleNum]
 
-benchCountSetBits :: Benchmark
-benchCountSetBits = undefined
--- This will presumably be linear in the size of the argument.
+-- Probably linear in x and literally in y; will be more expensive for y not divisible by 8
+benchShiftByteStringPos1 :: Benchmark
+benchShiftByteStringPos1 =
+  let b = ShiftByteString
+      xs = smallSample seedA
+      ns = fmap (\n -> fromIntegral $ 8*n) shifts
+      in createTwoTermBuiltinBenchWithNameLiteralInY "ShiftByteStringPos1" b [] xs ns
 
-benchFindFirstSetBit :: Benchmark
-benchFindFirstSetBit = undefined
--- This will presumably be linear in the size of the argument.
+benchShiftByteStringPos2 :: Benchmark
+benchShiftByteStringPos2 =
+  let b = ShiftByteString
+      xs = smallSample seedA
+      ns = fmap (\n -> fromIntegral $ 8*n-1) shifts
+      in createTwoTermBuiltinBenchWithNameLiteralInY "ShiftByteStringPos2" b [] xs ns
+
+benchShiftByteStringNeg1 :: Benchmark
+benchShiftByteStringNeg1 =
+  let b = ShiftByteString
+      xs = smallSample seedA
+      ns = fmap (\n -> fromIntegral $ -8*n) shifts
+      in createTwoTermBuiltinBenchWithNameLiteralInY "ShiftByteStringNeg1" b [] xs ns
+
+benchShiftByteStringNeg2 :: Benchmark
+benchShiftByteStringNeg2 =
+  let b = ShiftByteString
+      xs = smallSample seedA
+      ns = fmap (\n -> fromIntegral $ 1-8*n) shifts
+      in createTwoTermBuiltinBenchWithNameLiteralInY "ShiftByteStringNeg2" b [] xs ns
+
+-- Probably linear in x and literally in y; will be more expensive for y not divisible by 8
+benchRotateBytestringPos1 :: Benchmark
+benchRotateBytestringPos1 =
+  let b = RotateByteString
+      xs = smallSample seedA
+      ns = fmap (\n -> fromIntegral $ 8*n) shifts
+      in createTwoTermBuiltinBenchWithNameLiteralInY "RotateByteStringPos" b [] xs ns
+
+benchRotateBytestringPos2 :: Benchmark
+benchRotateBytestringPos2 =
+  let b = RotateByteString
+      xs = smallSample seedA
+      ns = fmap (\n -> fromIntegral $ 8*n-1) shifts
+      in createTwoTermBuiltinBenchWithNameLiteralInY "RotateByteStringPos" b [] xs ns
+
+benchRotateBytestringNeg1 :: Benchmark
+benchRotateBytestringNeg1 =
+  let b = RotateByteString
+      xs = smallSample seedA
+      ns = fmap (\n -> fromIntegral $ -8*n) shifts
+      in createTwoTermBuiltinBenchWithNameLiteralInY "RotateByteStringNeg" b [] xs ns
+
+benchRotateBytestringNeg2 :: Benchmark
+benchRotateBytestringNeg2 =
+  let b = RotateByteString
+      xs = smallSample seedA
+      ns = fmap (\n -> fromIntegral $ 1-8*n) shifts
+      in createTwoTermBuiltinBenchWithNameLiteralInY "RotateByteStringNeg" b [] xs ns
+
+benchCountSetBits00 :: Benchmark
+benchCountSetBits00 =
+  let xs = fmap (\n -> BS.replicate (8*n) 0x00) largeSampleSizes
+  in createOneTermBuiltinBenchWithName "CountSetBits00" CountSetBits [] xs
+
+-- Probably linear in x
+benchCountSetBitsFF :: Benchmark
+benchCountSetBitsFF =
+  let xs = fmap (\n -> BS.replicate (8*n) 0xFF) largeSampleSizes
+  in createOneTermBuiltinBenchWithName "CountSetBitsFF" CountSetBits [] xs
+
+-- 0x0000...00
+benchFindFirstSetBit1 :: Benchmark
+benchFindFirstSetBit1 =
+  let xs = fmap (\n -> BS.replicate (8*n) 0x00) largeSampleSizes
+  in createOneTermBuiltinBenchWithName "FindFirstSetBit1" FindFirstSetBit [] xs
+
+-- 0x8000...00
+benchFindFirstSetBit2 :: Benchmark
+benchFindFirstSetBit2 =
+  let xs = fmap (\n -> BS.cons 0x80 (BS.replicate (8*(n-1)) 0x00)) largeSampleSizes
+  in createOneTermBuiltinBenchWithName "FindFirstSetBit2" FindFirstSetBit [] xs
+
+-- 0x0101..01
+benchFindFirstSetBit3 :: Benchmark
+benchFindFirstSetBit3 =
+  let xs = fmap (\n -> BS.replicate (8*n) 0x01) largeSampleSizes
+  in createOneTermBuiltinBenchWithName "FindFirstSetBit3" FindFirstSetBit [] xs
 
 makeBenchmarks :: [Benchmark]
-makeBenchmarks =
-    [ benchByteStringToInteger
-    , benchIntegerToByteString
-    , benchAndByteString
+makeBenchmarks = [
+   bgroup "experiment1"
+    [ benchIntegerToByteString
+    , benchByteStringToInteger
+    , benchAndByteStringFalse
+    , benchAndByteStringTrue
     , benchComplementByteString
-    , benchReadBit
-    , benchWriteBits
-    , benchReplicateByteString
-    , benchShiftByteString
-    , benchRotateByteString
-    , benchCountSetBits
-    , benchFindFirstSetBit
+    , benchReadBitFirst
+    , benchReadBitLast
+    , benchWriteBitsFirst
+    , benchWriteBitsLast
+    , benchReplicateByte
     ]
+  , bgroup "experiment2"
+    [
+      benchShiftByteStringPos1
+    , benchShiftByteStringPos2
+    , benchShiftByteStringNeg1
+    , benchShiftByteStringNeg2
+    , benchRotateBytestringPos1
+    , benchRotateBytestringPos2
+    , benchRotateBytestringNeg1
+    , benchRotateBytestringNeg2
+    , benchCountSetBits00
+    , benchCountSetBitsFF
+    , benchFindFirstSetBit1
+    , benchFindFirstSetBit2
+    , benchFindFirstSetBit3
+    ]
+  ]

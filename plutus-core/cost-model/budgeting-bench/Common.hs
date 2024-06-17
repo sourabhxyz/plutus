@@ -194,6 +194,19 @@ createOneTermBuiltinBench name tys xs =
     bgroup (show name) $ [mkBM x | x <- xs]
         where mkBM x = benchDefault (showMemoryUsage x) $ mkApp1 name tys x
 
+{- | Given a builtin function f of type a -> _ together with a lists xs, create a
+   collection of benchmarks which run f on all elements of xs. -}
+createOneTermBuiltinBenchWithName
+    :: (fun ~ DefaultFun, uni ~ DefaultUni, uni `HasTermLevel` a, ExMemoryUsage a, NFData a)
+    => String
+    -> fun
+    -> [Type tyname uni ()]
+    -> [a]
+    -> Benchmark
+createOneTermBuiltinBenchWithName name fun tys xs =
+    bgroup name $ [mkBM x | x <- xs]
+        where mkBM x = benchDefault (showMemoryUsage x) $ mkApp1 fun tys x
+
 {- | Given a builtin function f of type a * b -> _ together with lists xs::[a] and
    ys::[b], create a collection of benchmarks which run f on all pairs in
    {(x,y}: x in xs, y in ys}. -}
@@ -209,8 +222,58 @@ createTwoTermBuiltinBench
     -> [b]
     -> Benchmark
 createTwoTermBuiltinBench name tys xs ys =
-    bgroup (show name) $ [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
+     bgroup (show name) $ [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
         where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 name tys x y
+
+createTwoTermBuiltinBenchWithName
+    :: ( fun ~ DefaultFun, uni ~ DefaultUni
+       , uni `HasTermLevel` a, DefaultUni `HasTermLevel` b
+       , ExMemoryUsage a, ExMemoryUsage b
+       , NFData a, NFData b
+       )
+    => String
+    -> fun
+    -> [Type tyname uni ()]
+    -> [a]
+    -> [b]
+    -> Benchmark
+createTwoTermBuiltinBenchWithName name fun tys xs ys =
+    bgroup name $ [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
+        where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 fun tys x y
+
+createTwoTermBuiltinBenchWithNameLiteralInY
+    :: ( fun ~ DefaultFun, uni ~ DefaultUni
+       , uni `HasTermLevel` a
+       , ExMemoryUsage a
+       , NFData a
+       )
+    => String
+    -> fun
+    -> [Type tyname uni ()]
+    -> [a]
+    -> [Integer]
+    -> Benchmark
+createTwoTermBuiltinBenchWithNameLiteralInY name fun tys xs ns =
+    bgroup name $ [bgroup (showMemoryUsage x) [mkBM x n | n <- ns] | x <- xs]
+        where mkBM x n =
+                benchDefault (showMemoryUsage (LiteralInteger (abs n))) $ mkApp2 fun tys x n
+
+createTwoTermBuiltinBenchWithNameAndFlag
+    :: ( fun ~ DefaultFun, uni ~ DefaultUni
+       , uni `HasTermLevel` a, DefaultUni `HasTermLevel` b
+       , ExMemoryUsage a, ExMemoryUsage b
+       , NFData a, NFData b
+       )
+    => String
+    -> fun
+    -> [Type tyname uni ()]
+    -> Bool
+    -> [a]
+    -> [b]
+    -> Benchmark
+createTwoTermBuiltinBenchWithNameAndFlag name fun tys flag xs ys =
+    bgroup name $ [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
+        where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp3 fun tys flag x y
 
 {- | Given a builtin function f of type a * b -> _ together with lists xs::[a] and
    ys::[b], create a collection of benchmarks which run f on all pairs in 'zip
@@ -238,6 +301,40 @@ createTwoTermBuiltinBenchElementwise name tys xs ys =
         where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 name tys x y
 -- TODO: throw an error if xmem != ymem?  That would suggest that the caller has
 -- done something wrong.
+
+createTwoTermBuiltinBenchElementwiseLiteralInX
+    :: ( fun ~ DefaultFun, uni ~ DefaultUni
+       , uni `HasTermLevel` b
+       , ExMemoryUsage b
+       , NFData b
+       )
+    => fun
+    -> [Type tyname uni ()]
+    -> [Integer]
+    -> [b]
+    -> Benchmark
+createTwoTermBuiltinBenchElementwiseLiteralInX name tys xs ys =
+    bgroup (show name) $
+      zipWith (\x y -> bgroup (showMemoryUsage (LiteralInteger x)) [mkBM x y]) xs ys
+        where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 name tys x y
+-- TODO: throw an error if xmem != ymem?  That would suggest that the caller has
+-- done something wrong.
+
+createTwoTermBuiltinBenchElementwiseWithName
+    :: ( fun ~ DefaultFun, uni ~ DefaultUni
+       , uni `HasTermLevel` a, uni `HasTermLevel` b
+       , ExMemoryUsage a, ExMemoryUsage b
+       , NFData a, NFData b
+       )
+    => String
+    -> fun
+    -> [Type tyname uni ()]
+    -> [a]
+    -> [b]
+    -> Benchmark
+createTwoTermBuiltinBenchElementwiseWithName name fun tys xs ys =
+    bgroup name $ zipWith (\x y -> bgroup (showMemoryUsage x) [mkBM x y]) xs ys
+        where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 fun tys x y
 
 {- | Given a builtin function f of type a * b * c -> _ together with a list of
    inputs of type (a,b,c), create a collection of benchmarks which run f on all

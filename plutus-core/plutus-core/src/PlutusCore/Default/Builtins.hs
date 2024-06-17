@@ -21,7 +21,7 @@ import PlutusCore.Default.Universe
 import PlutusCore.Evaluation.Machine.BuiltinCostModel
 import PlutusCore.Evaluation.Machine.ExBudgetStream (ExBudgetStream)
 import PlutusCore.Evaluation.Machine.ExMemoryUsage (ExMemoryUsage, LiteralByteSize (..),
-                                                    memoryUsage, singletonRose)
+                                                    LiteralInteger (..), memoryUsage, singletonRose)
 import PlutusCore.Evaluation.Result (EvaluationResult (..))
 import PlutusCore.Pretty (PrettyConfigPlc)
 
@@ -1884,8 +1884,8 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             (runCostingFunTwoArguments . paramWriteBits)
 
     toBuiltinMeaning _semvar ReplicateByte =
-        let replicateByteDenotation :: LiteralByteSize -> Word8 -> BuiltinResult BS.ByteString
-            replicateByteDenotation (LiteralByteSize n) w = Bitwise.replicateByte n w
+        let replicateByteDenotation :: LiteralInteger -> Word8 -> BuiltinResult BS.ByteString
+            replicateByteDenotation (LiteralInteger n) w = Bitwise.replicateByte n w
             -- FIXME: be careful about the coercion inreplicateByte
             {-# INLINE replicateByteDenotation #-}
         in makeBuiltinMeaning
