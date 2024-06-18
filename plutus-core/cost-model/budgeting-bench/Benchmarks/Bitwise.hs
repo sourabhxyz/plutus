@@ -22,7 +22,7 @@ largeSampleNum :: Int
 largeSampleNum = 160
 
 largeSampleSizes :: [Int]
-largeSampleSizes = [1..largeSampleNum]
+largeSampleSizes = fmap (10 *) [1..largeSampleNum]
 
 -- Smallish bytestring inputs: 150 entries.  Note that the length of a
 -- bytestring is eight times the size.
@@ -33,7 +33,7 @@ smallSampleNum :: Int
 smallSampleNum = 40
 
 smallSampleSizes :: [Int]
-smallSampleSizes = fmap (10 *) [1..smallSampleNum]
+smallSampleSizes = [1..smallSampleNum]
 
 -- Smallish bytestring inputs: 150 entries.  Note that the length of a
 -- bytestring is eight times the size.
