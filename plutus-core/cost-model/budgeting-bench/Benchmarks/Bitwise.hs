@@ -227,6 +227,13 @@ benchRotateBytestringNeg2 =
       ns = fmap (\n -> fromIntegral $ 1-8*n) shifts
       in createTwoTermBuiltinBenchWithNameLiteralInY "RotateByteStringNeg" b [] xs ns
 
+
+
+-- For CountSetBits, the time taken is linear in the length.  A model based on
+-- small input sizes (up to 1280 bytes) extrapolates well to results for large
+-- inputs (up to 12800 bytes).  Counting the bits in an all-0xFF bytestring may
+-- take 1% or so longer than for an all-0x00 bytestring.
+
 benchCountSetBits00 :: Benchmark
 benchCountSetBits00 =
   let xs = fmap (\n -> BS.replicate (8*n) 0x00) largeSampleSizes
@@ -238,6 +245,14 @@ benchCountSetBitsFF =
   let xs = fmap (\n -> BS.replicate (8*n) 0xFF) largeSampleSizes
   in createOneTermBuiltinBenchWithName "CountSetBitsFF" CountSetBits [] xs
 
+-- For FindFirstSetBits the time taken is pretty much linear in the length, with
+-- occasional bumps.  Unsurprisingly the function takes longest for an all-0x00
+-- bytestring because it has to examine every byte in that case (so this is the
+-- case we should use for costing).  For small data (up to 1280 bytes) the worst
+-- case takes up to 8% longer than the best case (all 0x00) and for large data
+-- (up to 12800 bytes) it can take up 40% longer. Again, a model based on small
+-- input sizes extrapolates well to results for large inputs.
+--
 -- 0x0000...00
 benchFindFirstSetBit1 :: Benchmark
 benchFindFirstSetBit1 =
@@ -255,6 +270,37 @@ benchFindFirstSetBit3 :: Benchmark
 benchFindFirstSetBit3 =
   let xs = fmap (\n -> BS.replicate (8*n) 0x01) largeSampleSizes
   in createOneTermBuiltinBenchWithName "FindFirstSetBit3" FindFirstSetBit [] xs
+
+bs1000 :: BS.ByteString
+bs1000 = makeSizedByteString seedA 125
+
+benchShiftByteStringPos1000 :: Benchmark
+benchShiftByteStringPos1000 =
+  let b = ShiftByteString
+      xs = [bs1000]
+      ns = [0..1100]
+      in createTwoTermBuiltinBenchWithNameLiteralInY "ShiftByteStringPos1000" b [] xs ns
+
+benchShiftByteStringNeg1000 :: Benchmark
+benchShiftByteStringNeg1000 =
+  let b = ShiftByteString
+      xs = [bs1000]
+      ns = fmap negate [0..1100]
+      in createTwoTermBuiltinBenchWithNameLiteralInY "ShiftByteStringNeg1000" b [] xs ns
+
+benchRotateBytestringPos1000 :: Benchmark
+benchRotateBytestringPos1000 =
+  let b = RotateByteString
+      xs = [bs1000]
+      ns = [1..1100]
+      in createTwoTermBuiltinBenchWithNameLiteralInY "RotateByteStringPos1000" b [] xs ns
+
+benchRotateBytestringNeg1000 :: Benchmark
+benchRotateBytestringNeg1000 =
+  let b = RotateByteString
+      xs = [bs1000]
+      ns = map negate [1..1100]
+      in createTwoTermBuiltinBenchWithNameLiteralInY "RotateByteStringNeg1000" b [] xs ns
 
 makeBenchmarks :: [Benchmark]
 makeBenchmarks = [
@@ -285,5 +331,12 @@ makeBenchmarks = [
     , benchFindFirstSetBit1
     , benchFindFirstSetBit2
     , benchFindFirstSetBit3
+    ]
+  , bgroup "experiment3"
+    [
+      benchShiftByteStringPos1000
+    , benchShiftByteStringNeg1000
+    , benchRotateBytestringPos1000
+    , benchRotateBytestringNeg1000
     ]
   ]
