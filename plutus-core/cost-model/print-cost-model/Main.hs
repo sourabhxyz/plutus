@@ -76,17 +76,15 @@ renderModel =
                                 ]  -- This is only used for the memory usage of
                                    -- `integerToByteString` at the moment, so
                                    -- this makes sense.
-     SubtractedSizes       l c -> [ "if x>y"
-                                  , printf "then %s" $ renderLinearFunction l "(x-y)"
-                                  , printf "else %d" c
-                               ]
-     ConstAboveDiagonal    c m -> [ "if x>y"
-                                  , printf "then %s" $ intercalate "\n" (renderModel m)
-                                  , printf "else %d" c
+     SubtractedSizes       l c -> [ renderLinearFunction l $ printf "max(x-y,%d)" c
                                   ]
-     ConstBelowDiagonal    c m -> [ "if x<y"
-                                  , printf "then %s" $ intercalate "\n" (renderModel m)
-                                  , printf "else %d" c
+     ConstAboveDiagonal    c m -> [ "if x<y"
+                                  , printf "then %d" c
+                                  , printf "else %s" $ intercalate "\n" (renderModel m)
+                                  ]
+     ConstBelowDiagonal    c m -> [ "if x>y"
+                                  , printf "then %d" c
+                                  , printf "else %s" $ intercalate "\n" (renderModel m)
                                   ]
      ConstOffDiagonal      c m -> [ "if x==y"
                                   , printf "then %s" $ intercalate "\n" (renderModel m)

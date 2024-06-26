@@ -94,6 +94,16 @@ benchIntegerToByteString =
 
     in createBench $ zip3 (repeat True) widths inputs
 
+
+
+-- AndByteString shows very similar times for False and True flags, with True
+-- (ie extension) taking a bit longer (~8%). It shows a good fit to
+-- a+b·min(x,y). This is on inputs up to size 400; for inputs up to size 1600
+-- the picture is similar, but it becomes a bit flattened for size>500.  We
+-- should fit the moel to the smaller data and see how it predicts the larger
+-- data.
+
+
 -- Benchmark with equal-sized inputs: it should be linear in the size.
 -- Initially check what happens for different-sized inputs with padding and
 -- truncation.  Presumably both of these will be bounded by the same-size case.
@@ -111,11 +121,17 @@ benchAndByteStringTrue =
       ys = smallSample seedB
       in createTwoTermBuiltinBenchWithNameAndFlag "AndByteStringTrue" b [] True xs ys
 
--- This should be a straightforward liear function of the size.
+-- For ComplementByteString, the time taken is linear in the length.  A model
+-- based on small input sizes (up to 1280 bytes) extrapolates well to results
+-- for large inputs (up to 12800 bytes).
 benchComplementByteString :: Benchmark
 benchComplementByteString =
   let xs = largeSample seedA
   in createOneTermBuiltinBench ComplementByteString [] xs
+
+
+-- ReadBit seems pretty much constant time.  Let's benchmark up to size 500
+-- reading the first (maybe fifth?) bit and take the mean.
 
 -- Linear in length and/or position?  Maybe pretty much constant time.
 benchReadBitFirst :: Benchmark
@@ -131,9 +147,20 @@ benchReadBitLast =
       ys :: [Integer] = fmap (\n -> fromIntegral $ 8*n-1) largeSampleSizes
   in createTwoTermBuiltinBenchElementwiseWithName "ReadBitLast" ReadBit [] xs ys
 
--- The function uses pokeByteOff, which updates a byte in place, presumably in
--- constant time.  If readBit is constant time then this should be linear in the
--- size of the second argument.
+
+-- The WriteBits function uses pokeByteOff, which updates a byte in place,
+-- presumably in constant time.  If readBit is constant time then this should be
+-- linear in the size of the second argument.
+
+-- Benchmarks show that the time does indeed depend mostly on the size of the
+-- list of updates, and it's linear over a large range of scales. Writing the
+-- final bit rather than the first one takes a little longer, maybe by about
+-- 5-10%.  The time taken to write the final bit doesn't seem to depend on the
+-- length of the bytestring.  Why does it take longer than writing the first
+-- bit?  Does it make any difference if we write a big list of different bits?
+
+-- For the real benchmarks, take a moderately long bytestring and try varying
+-- lengths of updates.  We don't need to vary the bytestring.
 
 benchWriteBitsFirst :: Benchmark
 benchWriteBitsFirst =
@@ -156,8 +183,12 @@ benchWriteBitsLast =
       !_ = if length xs /= length ys then error "mismatch" else ()
   in createTwoTermBuiltinBenchElementwiseWithName "WriteBitsLast" WriteBits [] xs ys
 
--- This will be linear in the first argument (the number of replications), but
--- may appear constant time.
+
+-- For small inputs (up to 160 bytes) this looks kind of constant-time.  For
+-- larger inputs (up to 1600 bytes)it's linear.  A linear model based on small
+-- data underestimates large results very badly. A model based on large data
+-- overestimates the small results. A model based on figures up to 500 bytes
+-- fits the smaller data much better.
 benchReplicateByte :: Benchmark
 benchReplicateByte =
   let ys = replicate largeSampleNum (0xFF :: Integer)
@@ -177,6 +208,9 @@ benchShiftByteStringPos1 =
       ns = fmap (\n -> fromIntegral $ 8*n) shifts
       in createTwoTermBuiltinBenchWithNameLiteralInY "ShiftByteStringPos1" b [] xs ns
 
+-- For a fixed input bytestring, the time taken decreases as the amount of shift
+-- increases because the number of bits you actually have to copy decreases.
+--
 benchShiftByteStringPos2 :: Benchmark
 benchShiftByteStringPos2 =
   let b = ShiftByteString
