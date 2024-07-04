@@ -767,7 +767,8 @@ modelFun <- function(path) {
     complementByteStringModel <- linearInX ("ComplementByteString")
     readBitModel              <- constantModel ("ReadBit")
     writeBitsModel            <- linearInY ("WriteBitsModel")
-    ## ^ The Y value here is the length of the list, thanks to ListCostedByLength. 
+    ## ^ The Y value here is the length of the list because we use ListCostedByLength in the
+    ## relevant costing benchmark.
     replicateByteModel        <- linearInX ("ReplicateByte")
     shiftByteStringModel      <- linearInX ("ShiftByteString")
     rotateByteStringModel     <- linearInX ("RotateByteString")

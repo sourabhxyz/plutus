@@ -95,16 +95,6 @@ benchIntegerToByteString =
     in createBench $ zip3 (repeat True) widths inputs
 
 
-
--- AndByteString shows very similar times for False and True flags, with True
--- (ie extension) taking a bit longer (~8%). It shows a good fit to
--- a+b·min(x,y). This is on inputs up to size 400; for inputs up to size 1600
--- the picture is similar, but it becomes a bit flattened for size>500.  We
--- should fit the moel to the smaller data and see how it predicts the larger
--- data.
-
-
-
 {- For AndByteString with different-sized inputs, calling it with extension
 semantics (ie, first argument=True) takes up to about 5% longer than with
 truncation semantics for small arguments and up to about 15% for larger inputs.
@@ -151,49 +141,27 @@ benchReadBit =
   in createTwoTermBuiltinBenchElementwise ReadBit [] xs ys
 
 
--- If readBit is constant time then this should be
--- linear in the size of the second argument.
-
-{- The WriteBits function uses pokeByteOff, which updates a byte in place,
-   presumably in constant time.  Benchmarks show that the time depends mostly on
-   the size of the list of updates, and it's linear over a large range of
-   scales. Writing the final bit rather than the first one takes a little
-   longer, maybe by about 5-10%.  The time taken to write the final bit doesn't
-   seem to depend on the length of the bytestring.  Why does it take longer than
-   writing the first bit?  Does it make any difference if we write a big list of
-   different bits?
+{- Benchmarks show that the time taken by `writeBits` depends mostly on the size
+   of the list of updates, although it may take a little longer to write bits
+   with larger indices.  We run all of the benchmarks on a 1000-byte bytestring
+   and benchmark the time taken to write the highest-indexed bit to take account
+   of this.
 -}
-
--- For the real benchmarks, take a moderately long bytestring and try varying
--- lengths of updates.  We don't need to vary the bytestring.
-
 benchWriteBits :: Benchmark
-benchWriteBits = benchWriteBitsFirst
+benchWriteBits =
+  let fun = WriteBits
+      len = 1000
+      bs = BS.replicate len 0xFF
+      topIndex :: Integer = fromIntegral $ 8*len - 1
+      mkUpdates k = replicate k (topIndex, True) -- write the highest bit k times
+      updates = fmap mkUpdates [1..smallSampleNum]
+      mkBM :: [(Integer, Bool)] -> Benchmark
+      mkBM l = benchDefault (showMemoryUsage (ListCostedByLength l)) $ mkApp2 fun [] bs l
+  in bgroup (show fun) $ [bgroup (showMemoryUsage bs) $ fmap mkBM updates]
 
-  benchWriteBitsFirst :: Benchmark
-benchWriteBitsFirst =
-  let xs = smallSample seedA
-      ys = fmap (\n -> replicate n (0::Integer,True)) smallSampleSizes
-  in createTwoTermBuiltinBenchWithName "WriteBitsFirst" WriteBits [] xs ys
-
--- For each n we create a bytestring of length n and then for each
--- of those we create a list of pairs which write 1 into the highest
--- bit.  Stricly the actual length of the list should be the size measure,
--- but the size will be a reasonable proxy.
-benchWriteBitsLast :: Benchmark
-benchWriteBitsLast =
-  let xs0 = smallSample seedA
-      xs = concat $ fmap (replicate smallSampleNum) xs0
-      mkYs x =
-        let n = fromIntegral $ BS.length x :: Integer
-        in fmap (\s -> replicate s (8*n-1 :: Integer, True)) smallSampleSizes
-      ys = concat $ fmap mkYs xs0
-      !_ = if length xs /= length ys then error "mismatch" else ()
-  in createTwoTermBuiltinBenchElementwiseWithName "WriteBitsLast" WriteBits [] xs ys
-
-
-{- For small inputs this looks constant-time.  For larger inputs it's linear. A
-   model based on large data overestimates the small results, but not too badly.
+{- For small inputs `replicateByte` looks constant-time.  For larger inputs it's
+   linear. A model based on large data overestimates the small results, but not
+   too badly.
 -}
 benchReplicateByte :: Benchmark
 benchReplicateByte =
@@ -202,22 +170,23 @@ benchReplicateByte =
        (fmap (fromIntegral . (8*)) largeSampleSizes) ys
 
 {- Benchmarks with varying sizes of bytestrings and varying amounts of shifting
-   show that the time depends linearly on the length of the bytestring and (to a
-   much smaller degree) the size of the shift, except that shifts which involve
-   shifting bits between bytes are significantly more expensive than shfts by a
-   whole number of bytes.  For bytestrings of size 50 the ratio between the
-   former and the latter is about 1.5 and for size 400 it's about 4.  We could
-   add a special case for costing whole-byte shifts, but for the time being we
-   run benchmarks for a single-bit shift and fit a linear model to the time
-   taken versus the length of the bytestring.  This gives a mmodel which is very
-   accurate for small shifts and overstimates times for large shifts by maybe 4%
-   or so, A model fitted to smaller data extrapolates very well to larger data.
+   show that the execution time of `shiftByteString` depends linearly on the
+   length of the bytestring and (to a much smaller degree) the size of the
+   shift, except that shifts which involve shifting bits between bytes are
+   significantly more expensive than shfts by a whole number of bytes.  For
+   bytestrings of size 50 the ratio between the former and the latter is about
+   1.5 and for size 400 it's about 4.  We could add a special case for costing
+   whole-byte shifts, but for the time being we run benchmarks for a single-bit
+   shift and fit a linear model to the time taken versus the length of the
+   bytestring.  This gives a mmodel which is very accurate for small shifts and
+   overstimates times for large shifts by maybe 4% or so, A model fitted to
+   smaller data extrapolates very well to larger data.
 -}
-benchShiftByteString: Benchmark
+benchShiftByteString :: Benchmark
 benchShiftByteString =
   let xs = smallSample seedA
       ns = fmap (const 1) xs
-      in createTwoTermBuiltinLiteralInY ShiftByteString [] xs ns
+      in createTwoTermBuiltinBenchElementwiseLiteralInY ShiftByteString [] xs ns
 
 {- The behaviour of `rotateByteString` is very similar to that of
    `shiftByteString` except that the time taken depends pretty much linearly on
@@ -231,7 +200,7 @@ benchRotateBytestring :: Benchmark
 benchRotateBytestring =
   let xs = smallSample seedA
       ns = fmap (const 1) xs
-  in createTwoTermBuiltinBenchLiteralInY RotateByteString [] xs ns
+  in createTwoTermBuiltinBenchElementwiseLiteralInY RotateByteString [] xs ns
 
 {- For CountSetBits, the time taken is linear in the length.  A model based on
    small input sizes (up to 1280 bytes) extrapolates well to results for large
@@ -253,7 +222,7 @@ benchCountSetBits =
 benchFindFirstSetBit :: Benchmark
 benchFindFirstSetBit =
   let xs = fmap (\n -> BS.cons 0x80 (BS.replicate (8*(n-1)) 0x00)) smallSampleSizes
-  in createOneTermBuiltinBenchWithName "FindFirstSetBit2" FindFirstSetBit [] xs
+  in createOneTermBuiltinBench FindFirstSetBit [] xs
 
 makeBenchmarks :: [Benchmark]
 makeBenchmarks =
