@@ -753,17 +753,26 @@ modelFun <- function(path) {
         mk.result(m, "quadratic_in_y")
     }
 
-    andByteStringModel        <- NA
+    andByteStringModel <- {
+        fname <- "AndByteString"
+        filtered <- data %>%
+            filter.and.check.nonempty(fname) %>%
+            discard.overhead ()
+        m <- lm(t ~ I(x_mem + y_mem), filtered)
+        mk.result(m, "added_sizes")
+    }
     orByteStringModel         <- andByteStringModel
     xorByteStringModel        <- andByteStringModel
-    complementByteStringModel <- NA
-    readBitModel              <- NA
-    writeBitsModel            <- NA
-    replicateByteModel        <- NA
-    shiftByteStringModel      <- NA
-    rotateByteStringModel     <- NA
-    countSetBitsModel         <- NA
-    findFirstSetBitModel      <- NA
+
+    complementByteStringModel <- linearInX ("ComplementByteString")
+    readBitModel              <- constantModel ("ReadBit")
+    writeBitsModel            <- linearInY ("WriteBitsModel")
+    ## ^ The Y value here is the length of the list, thanks to ListCostedByLength. 
+    replicateByteModel        <- linearInX ("ReplicateByte")
+    shiftByteStringModel      <- linearInX ("ShiftByteString")
+    rotateByteStringModel     <- linearInX ("RotateByteString")
+    countSetBitsModel         <- linearInX ("CountSetBits")
+    findFirstSetBitModel      <- linearInX ("FindFirstSetBit")
 
 
 ##### Models to be returned to Haskell #####

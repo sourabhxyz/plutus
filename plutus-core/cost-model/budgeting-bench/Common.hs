@@ -241,6 +241,22 @@ createTwoTermBuiltinBenchWithName name fun tys xs ys =
     bgroup name $ [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
         where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 fun tys x y
 
+createTwoTermBuiltinBenchLiteralInY
+    :: ( fun ~ DefaultFun, uni ~ DefaultUni
+       , uni `HasTermLevel` a
+       , ExMemoryUsage a
+       , NFData a
+       )
+    => fun
+    -> [Type tyname uni ()]
+    -> [a]
+    -> [Integer]
+    -> Benchmark
+createTwoTermBuiltinBenchLiteralInY fun tys xs ns =
+    bgroup (show fun) $ [bgroup (showMemoryUsage x) [mkBM x n | n <- ns] | x <- xs]
+        where mkBM x n =
+                benchDefault (showMemoryUsage (LiteralInteger (abs n))) $ mkApp2 fun tys x n
+
 createTwoTermBuiltinBenchWithNameLiteralInY
     :: ( fun ~ DefaultFun, uni ~ DefaultUni
        , uni `HasTermLevel` a
@@ -258,21 +274,20 @@ createTwoTermBuiltinBenchWithNameLiteralInY name fun tys xs ns =
         where mkBM x n =
                 benchDefault (showMemoryUsage (LiteralInteger (abs n))) $ mkApp2 fun tys x n
 
-createTwoTermBuiltinBenchWithNameAndFlag
+createTwoTermBuiltinBenchWithFlag
     :: ( fun ~ DefaultFun, uni ~ DefaultUni
        , uni `HasTermLevel` a, DefaultUni `HasTermLevel` b
        , ExMemoryUsage a, ExMemoryUsage b
        , NFData a, NFData b
        )
-    => String
-    -> fun
+    => fun
     -> [Type tyname uni ()]
     -> Bool
     -> [a]
     -> [b]
     -> Benchmark
-createTwoTermBuiltinBenchWithNameAndFlag name fun tys flag xs ys =
-    bgroup name $ [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
+createTwoTermBuiltinBenchWithFlag fun tys flag xs ys =
+    bgroup (show fun) $ [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
         where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp3 fun tys flag x y
 
 {- | Given a builtin function f of type a * b -> _ together with lists xs::[a] and
