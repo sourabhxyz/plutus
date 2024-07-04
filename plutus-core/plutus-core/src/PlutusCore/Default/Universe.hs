@@ -7,6 +7,7 @@
 -- to test that some constraints are solvable
 {-# OPTIONS -Wno-redundant-constraints #-}
 
+{-# LANGUAGE AllowAmbiguousTypes      #-}
 {-# LANGUAGE BlockArguments           #-}
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ConstraintKinds          #-}
@@ -48,7 +49,8 @@ import PlutusCore.Crypto.BLS12_381.G1 qualified as BLS12_381.G1
 import PlutusCore.Crypto.BLS12_381.G2 qualified as BLS12_381.G2
 import PlutusCore.Crypto.BLS12_381.Pairing qualified as BLS12_381.Pairing
 import PlutusCore.Data
-import PlutusCore.Evaluation.Machine.ExMemoryUsage (LiteralByteSize (..), LiteralInteger (..))
+import PlutusCore.Evaluation.Machine.ExMemoryUsage (ListCostedByLength (..), LiteralByteSize (..),
+                                                    LiteralInteger (..))
 import PlutusCore.Pretty.Extra
 
 import Data.ByteString (ByteString)
@@ -479,6 +481,28 @@ deriving newtype instance HasConstantIn DefaultUni term =>
     MakeKnownIn DefaultUni term LiteralInteger
 deriving newtype instance HasConstantIn DefaultUni term =>
     ReadKnownIn DefaultUni term LiteralInteger
+
+deriving newtype instance
+  forall tyname a .
+  ( Contains DefaultUni a
+  , KnownTypeAst tyname DefaultUni a
+  )
+  => KnownTypeAst tyname DefaultUni (ListCostedByLength a)
+deriving newtype instance
+  forall term tyname a .
+  ( Contains DefaultUni a
+  , HasConstantIn DefaultUni term
+  , KnownTypeAst tyname DefaultUni a
+  )
+  => MakeKnownIn DefaultUni term (ListCostedByLength a)
+deriving newtype instance
+  forall term tyname a .
+  ( Contains DefaultUni a
+  , HasConstantIn DefaultUni term
+  , KnownTypeAst tyname DefaultUni a
+  )
+  => ReadKnownIn DefaultUni term (ListCostedByLength a)
+
 
 {- Note [Stable encoding of tags]
 'encodeUni' and 'decodeUni' are used for serialisation and deserialisation of types from the

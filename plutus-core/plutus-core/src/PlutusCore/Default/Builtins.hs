@@ -21,8 +21,9 @@ import PlutusCore.Data (Data (..))
 import PlutusCore.Default.Universe
 import PlutusCore.Evaluation.Machine.BuiltinCostModel
 import PlutusCore.Evaluation.Machine.ExBudgetStream (ExBudgetStream)
-import PlutusCore.Evaluation.Machine.ExMemoryUsage (ExMemoryUsage, LiteralByteSize (..),
-                                                    LiteralInteger (..), memoryUsage, singletonRose)
+import PlutusCore.Evaluation.Machine.ExMemoryUsage (ExMemoryUsage, ListCostedByLength (..),
+                                                    LiteralByteSize (..), LiteralInteger (..),
+                                                    memoryUsage, singletonRose)
 import PlutusCore.Pretty (PrettyConfigPlc)
 
 import PlutusCore.Bitwise qualified as Bitwise
@@ -1860,6 +1861,9 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             blake2b_224Denotation
             (runCostingFunOneArgument . paramBlake2b_224)
 
+
+    -- Extra bytestring operations
+
     -- Conversions
     {- See Note [Input length limitation for IntegerToByteString] -}
     toBuiltinMeaning _semvar IntegerToByteString =
@@ -1913,6 +1917,8 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             complementByteStringDenotation
             (runCostingFunOneArgument . paramComplementByteString)
 
+    -- Bitwise operations
+
     toBuiltinMeaning _semvar ReadBit =
         let readBitDenotation :: BS.ByteString -> Int -> BuiltinResult Bool
             readBitDenotation = Bitwise.readBit
@@ -1922,8 +1928,8 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             (runCostingFunTwoArguments . paramReadBit)
 
     toBuiltinMeaning _semvar WriteBits =
-        let writeBitsDenotation :: BS.ByteString -> [(Integer, Bool)] -> BuiltinResult BS.ByteString
-            writeBitsDenotation = Bitwise.writeBits
+        let writeBitsDenotation :: BS.ByteString -> ListCostedByLength (Integer, Bool) -> BuiltinResult BS.ByteString
+            writeBitsDenotation s (ListCostedByLength updates) = Bitwise.writeBits s updates
             {-# INLINE writeBitsDenotation #-}
         in makeBuiltinMeaning
             writeBitsDenotation
@@ -1937,8 +1943,6 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
         in makeBuiltinMeaning
             replicateByteDenotation
             (runCostingFunTwoArguments . paramReplicateByte)
-
-    -- Bitwise
 
     toBuiltinMeaning _semvar ShiftByteString =
         let shiftByteStringDenotation :: BS.ByteString -> Int -> BS.ByteString

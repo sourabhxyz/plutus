@@ -82,7 +82,7 @@ genConstant tr
     | Just HRefl <- eqTypeRep tr (typeRep @Int) = SomeGen genInteger
     | Just HRefl <- eqTypeRep tr (typeRep @Word8) = SomeGen genInteger
     | Just HRefl <- eqTypeRep tr (typeRep @LiteralByteSize) = SomeGen genInteger
-    | Just HRefl <- eqTypeRep tr (typeRep @LiteralInteger) = SomeGen genInteger
+--    | Just HRefl <- eqTypeRep tr (typeRep @LiteralInteger) = SomeGen genInteger
     | Just HRefl <- eqTypeRep tr (typeRep @Bool) = SomeGen Gen.bool
     | Just HRefl <- eqTypeRep tr (typeRep @BS.ByteString) = SomeGen genByteString
     | Just HRefl <- eqTypeRep tr (typeRep @Text) = SomeGen genText

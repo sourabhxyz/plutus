@@ -104,6 +104,24 @@ benchIntegerToByteString =
 -- data.
 
 
+
+{- For AddInteger with different-sized inputs, calling it with extension semantics
+(ie, firsrt argument=True) takes up to about 5% longer than with truncation
+semantics for small arguments and up to about 15% for larger inputs.  Fitting
+t~min(x,y) gives a reasonable prediction for small values of x and y but this
+doesn't extend too well to larger values.  There are two factors in play: with
+extension semantics there's less copying work to do but more alloction work
+(which is a lot cheaper).  If we fit a model of the form t~pmin(x,y) then this
+accounts for the copying but not the allocation.  if we add a factor for copying
+as well (t ~ pmin(x,y) + abs(x-y)) then we get a model that extends well to
+larger data.  Equivalently we can fit t~x+y to the data for y<=x, but then we'd
+have to swap the inputs for y>x.
+
+I(x+y) does a perfectly good job though: we get within +/-5% for the small data
+and -20% to +5% for big data. We could try fitting t=a+bx along x=y for the
+small data and then extrapolate that to a/2+ b/2(x+y) elsewhere.
+-}
+
 -- Benchmark with equal-sized inputs: it should be linear in the size.
 -- Initially check what happens for different-sized inputs with padding and
 -- truncation.  Presumably both of these will be bounded by the same-size case.
@@ -200,6 +218,18 @@ benchReplicateByte =
 shifts :: [Int]
 shifts = [1..smallSampleNum]
 
+{- Benchmarks with varying sizes of bytestrings and varying amounts of rotation
+   show that the time depends linearly on the length of the bytestring and (to a
+   much smaller degree) the size of the shift, except that shifts which involve
+   shifting bits between bytes are significantly more expensive than shfts by a
+   whole number of bytes.  For bytestrings of size 50 the ratio between the
+   former and the latter is about 1.5 and for size 400 it's about 4.  For
+   bytestrings of a given length the size of the rotation appears to have
+   essentially no effect on the time taken. We could add a special case for
+   costing whole-byte rotations, but for the time being we run benchmarks for a
+   single-bit shift and fit a straight line to the time taken.  A model fitted
+   to smaller data extrapolates very well to larger data.
+-}
 -- Probably linear in x and literally in y; will be more expensive for y not divisible by 8
 benchShiftByteStringPos1 :: Benchmark
 benchShiftByteStringPos1 =
@@ -232,34 +262,49 @@ benchShiftByteStringNeg2 =
       ns = fmap (\n -> fromIntegral $ 1-8*n) shifts
       in createTwoTermBuiltinBenchWithNameLiteralInY "ShiftByteStringNeg2" b [] xs ns
 
+
+
+{- Benchmarks with varying sizes of bytestrings and varying amounts of rotation
+   show that the time taken depends pretty much linearly on the length of the
+   bytestring (and the effect of the size of the rotation is negligible), except
+   that rotations which involve shifting bits between bytes are significantly
+   more expensive than rotations by a whole number of bytes.  For bytestrings of
+   size 50 the ratio between the former and the latter is about 1.5 and for size
+   200 it's about 3.  For bytestrings of a given length the size of the rotation
+   appears to have essentially no effect on the time taken. We could add a
+   special case for costing whole-byte rotations, but for the time being we run
+   benchmarks for a single-bit shift and fit a straight line to the time taken.
+   A model fitted to smaller data extrapolates very well to larger data.
+-}
+
 -- Probably linear in x and literally in y; will be more expensive for y not divisible by 8
 benchRotateBytestringPos1 :: Benchmark
 benchRotateBytestringPos1 =
   let b = RotateByteString
       xs = smallSample seedA
       ns = fmap (\n -> fromIntegral $ 8*n) shifts
-      in createTwoTermBuiltinBenchWithNameLiteralInY "RotateByteStringPos" b [] xs ns
+      in createTwoTermBuiltinBenchWithNameLiteralInY "RotateByteStringPos1" b [] xs ns
 
 benchRotateBytestringPos2 :: Benchmark
 benchRotateBytestringPos2 =
   let b = RotateByteString
       xs = smallSample seedA
       ns = fmap (\n -> fromIntegral $ 8*n-1) shifts
-      in createTwoTermBuiltinBenchWithNameLiteralInY "RotateByteStringPos" b [] xs ns
+      in createTwoTermBuiltinBenchWithNameLiteralInY "RotateByteStringPos2" b [] xs ns
 
 benchRotateBytestringNeg1 :: Benchmark
 benchRotateBytestringNeg1 =
   let b = RotateByteString
       xs = smallSample seedA
       ns = fmap (\n -> fromIntegral $ -8*n) shifts
-      in createTwoTermBuiltinBenchWithNameLiteralInY "RotateByteStringNeg" b [] xs ns
+      in createTwoTermBuiltinBenchWithNameLiteralInY "RotateByteStringNeg1" b [] xs ns
 
 benchRotateBytestringNeg2 :: Benchmark
 benchRotateBytestringNeg2 =
   let b = RotateByteString
       xs = smallSample seedA
       ns = fmap (\n -> fromIntegral $ 1-8*n) shifts
-      in createTwoTermBuiltinBenchWithNameLiteralInY "RotateByteStringNeg" b [] xs ns
+      in createTwoTermBuiltinBenchWithNameLiteralInY "RotateByteStringNeg2" b [] xs ns
 
 
 
@@ -270,7 +315,7 @@ benchRotateBytestringNeg2 =
 
 benchCountSetBits00 :: Benchmark
 benchCountSetBits00 =
-  let xs = fmap (\n -> BS.replicate (8*n) 0x00) largeSampleSizes
+  let xs = fmap (\n -> BS.replicate (8*n) 0xFF) largeSampleSizes
   in createOneTermBuiltinBenchWithName "CountSetBits00" CountSetBits [] xs
 
 -- Probably linear in x
@@ -281,11 +326,11 @@ benchCountSetBitsFF =
 
 -- For FindFirstSetBits the time taken is pretty much linear in the length, with
 -- occasional bumps.  Unsurprisingly the function takes longest for an all-0x00
--- bytestring because it has to examine every byte in that case (so this is the
--- case we should use for costing).  For small data (up to 1280 bytes) the worst
--- case takes up to 8% longer than the best case (all 0x00) and for large data
--- (up to 12800 bytes) it can take up 40% longer. Again, a model based on small
--- input sizes extrapolates well to results for large inputs.
+-- bytestring because it has to examine every byte in that case so this is the
+-- case we use for costing.  For small data (up to 1280 bytes = 160 ExMemory)
+-- the worst case takes up to 8% longer than the best case (all 0x00) and for
+-- large data (up to 12800 bytes) it can take up 40% longer. A model based on
+-- small input sizes extrapolates well to results for large inputs.
 --
 -- 0x0000...00
 benchFindFirstSetBit1 :: Benchmark
@@ -303,7 +348,7 @@ benchFindFirstSetBit2 =
 benchFindFirstSetBit3 :: Benchmark
 benchFindFirstSetBit3 =
   let xs = fmap (\n -> BS.replicate (8*n) 0x01) largeSampleSizes
-  in createOneTermBuiltinBenchWithName "FindFirstSetBit3" FindFirstSetBit [] xs
+  in createOneTermBuiltinBench FindFirstSetBit [] xs
 
 bs1000 :: BS.ByteString
 bs1000 = makeSizedByteString seedA 125
