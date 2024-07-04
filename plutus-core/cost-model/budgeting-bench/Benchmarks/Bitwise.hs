@@ -226,15 +226,17 @@ benchFindFirstSetBit =
 
 makeBenchmarks :: [Benchmark]
 makeBenchmarks =
-  [ benchIntegerToByteString
-  , benchByteStringToInteger
-  , benchAndByteString
-  , benchComplementByteString
-  , benchReadBit
-  , benchWriteBits
-  , benchReplicateByte
-  , benchShiftByteString
-  , benchRotateBytestring
-  , benchCountSetBits
-  , benchFindFirstSetBit
+  [ bgroup "bytestrings"
+    [ benchIntegerToByteString
+    , benchByteStringToInteger
+    , benchAndByteString
+    , benchComplementByteString
+    , benchReadBit
+    , benchWriteBits
+    , benchReplicateByte
+    , benchShiftByteString
+    , benchRotateBytestring
+    , benchCountSetBits
+    , benchFindFirstSetBit
+    ]
   ]
