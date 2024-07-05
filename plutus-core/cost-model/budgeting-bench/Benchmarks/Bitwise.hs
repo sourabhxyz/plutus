@@ -18,27 +18,27 @@ import Hedgehog qualified as H
 
 ---------------- ByteString builtins ----------------
 
+smallSampleNum :: Int
+smallSampleNum = 40
+
+smallSampleSizes :: [Int]
+smallSampleSizes = fmap (10 *) [1..smallSampleNum]
+
+-- Smallish bytestring inputs: 50 entries.  Note that the length of a
+-- bytestring is eight times the size.
+smallSample :: H.Seed -> [BS.ByteString]
+smallSample seed = makeSizedByteStrings seed smallSampleSizes
+
 largeSampleNum :: Int
 largeSampleNum = 150
 
 largeSampleSizes :: [Int]
-largeSampleSizes = fmap (10 *) [1..largeSampleNum]
+largeSampleSizes = [1..largeSampleNum]
 
 -- Smallish bytestring inputs: 150 entries.  Note that the length of a
 -- bytestring is eight times the size.
 largeSample :: H.Seed -> [BS.ByteString]
 largeSample seed = makeSizedByteStrings seed largeSampleSizes
-
-smallSampleNum :: Int
-smallSampleNum = 50
-
-smallSampleSizes :: [Int]
-smallSampleSizes = [1..smallSampleNum]
-
--- Smallish bytestring inputs: 150 entries.  Note that the length of a
--- bytestring is eight times the size.
-smallSample :: H.Seed -> [BS.ByteString]
-smallSample seed = makeSizedByteStrings seed smallSampleSizes
 
 -- Make an integer of size n which encodes to 0xFF...FF
 repunit :: Int -> Integer
@@ -95,6 +95,12 @@ benchIntegerToByteString =
     in createBench $ zip3 (repeat True) widths inputs
 
 
+{- Most of the initial benchmarks were run with a set of small input bytestrings
+  (up to size 40 / 320 bytes) and then again with a set of large inputs (up to
+  size 400 / 3200 bytes).  In the budgeting benchmarks we go up to size 50 (=
+  400 bytes) for small inputs.
+-}
+
 {- For AndByteString with different-sized inputs, calling it with extension
 semantics (ie, first argument=True) takes up to about 5% longer than with
 truncation semantics for small arguments and up to about 15% for larger inputs.
@@ -118,17 +124,11 @@ benchAndByteString =
       ys = smallSample seedB
   in createTwoTermBuiltinBenchWithFlag AndByteString [] True xs ys
 
-{- Most of the initial benchmarks were run with a set of small input bytestrings
-  (up to size 40 / 320 bytes) and then again with a set of large inputs (up to
-  size 400 / 3200 bytes).  In the budgeting benchmarks we go up to size 50 (=
-  400 bytes) for small inputs.
--}
-
 {- For ComplementByteString, the time taken is linear in the length.  A model
  based on small input sizes extrapolates well to results for large inputs -}
 benchComplementByteString :: Benchmark
 benchComplementByteString =
-  let xs = smallSample seedA
+  let xs = largeSample seedA
   in createOneTermBuiltinBench ComplementByteString [] xs
 
 
@@ -150,11 +150,11 @@ benchReadBit =
 benchWriteBits :: Benchmark
 benchWriteBits =
   let fun = WriteBits
-      len = 1000
+      len = 1600
       bs = BS.replicate len 0xFF
       topIndex :: Integer = fromIntegral $ 8*len - 1
-      mkUpdates k = replicate k (topIndex, True) -- write the highest bit k times
-      updates = fmap mkUpdates [1..smallSampleNum]
+      mkUpdates k = replicate (10*k) (topIndex, True) -- write the highest bit 10*k times
+      updates = fmap mkUpdates [1..largeSampleNum]
       mkBM :: [(Integer, Bool)] -> Benchmark
       mkBM l = benchDefault (showMemoryUsage (ListCostedByLength l)) $ mkApp2 fun [] bs l
   in bgroup (show fun) $ [bgroup (showMemoryUsage bs) $ fmap mkBM updates]
@@ -184,7 +184,7 @@ benchReplicateByte =
 -}
 benchShiftByteString :: Benchmark
 benchShiftByteString =
-  let xs = smallSample seedA
+  let xs = largeSample seedA
       ns = fmap (const 1) xs
       in createTwoTermBuiltinBenchElementwiseLiteralInY ShiftByteString [] xs ns
 
@@ -198,7 +198,7 @@ benchShiftByteString =
 -}
 benchRotateBytestring :: Benchmark
 benchRotateBytestring =
-  let xs = smallSample seedA
+  let xs = largeSample seedA
       ns = fmap (const 1) xs
   in createTwoTermBuiltinBenchElementwiseLiteralInY RotateByteString [] xs ns
 
@@ -208,7 +208,7 @@ benchRotateBytestring =
    take 1% or so longer than for an all-0x00 bytestring. -}
 benchCountSetBits :: Benchmark
 benchCountSetBits =
-  let xs = fmap (\n -> BS.replicate (8*n) 0xFF) smallSampleSizes
+  let xs = fmap (\n -> BS.replicate (8*n) 0xFF) largeSampleSizes
   in createOneTermBuiltinBench CountSetBits [] xs
 
 {- For FindFirstSetBits the time taken is pretty much linear in the length, with
@@ -221,7 +221,7 @@ benchCountSetBits =
    well to results for large inputs. -}
 benchFindFirstSetBit :: Benchmark
 benchFindFirstSetBit =
-  let xs = fmap (\n -> BS.cons 0x80 (BS.replicate (8*(n-1)) 0x00)) smallSampleSizes
+  let xs = fmap (\n -> BS.cons 0x80 (BS.replicate (8*(n-1)) 0x00)) largeSampleSizes
   in createOneTermBuiltinBench FindFirstSetBit [] xs
 
 makeBenchmarks :: [Benchmark]
@@ -240,3 +240,16 @@ makeBenchmarks =
     , benchFindFirstSetBit
     ]
   ]
+
+
+{-
+AndByteString            x -> 1,...,50; small -> 10,20,...,400
+ComplementByteString     x -> 1,...,50; small -> 1,2,...,160
+ReadBit                  x -> 10,20,...,1500;  small -> 1,2,...,160
+WriteBits                x -> 125, y -> 1,...50; small: x -> 10, 20, ..., 400, y -> 10,...,1200; lines out.
+ReplicateByte            x -> 80,160,...,12000; small -> 1,2,...,160; large -> 10,20,...,1600; way out
+ShiftByteString          x -> 1,...,50; y -> 1; small x -> 1,...,40; y -> 7,15,...,319
+RotateBytestring         Similar
+CountSetBits             x -> 1,...,50; small -> 1,...,160;
+FindFirstSetBit          x -> 1,...,50; small -> 1,...,160
+-}
