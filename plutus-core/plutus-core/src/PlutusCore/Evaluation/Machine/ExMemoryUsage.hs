@@ -10,8 +10,8 @@ module PlutusCore.Evaluation.Machine.ExMemoryUsage
     , singletonRose
     , ExMemoryUsage(..)
     , flattenCostRose
-    , LiteralByteSize(..)
-    , LiteralInteger(..)
+    , IntegerCostedAsByteSize(..)
+    , IntegerCostedLiterally(..)
     , ListCostedByLength(..)
     ) where
 
@@ -170,24 +170,29 @@ instance ExMemoryUsage () where
     memoryUsage () = singletonRose 1
     {-# INLINE memoryUsage #-}
 
-{- | When invoking a built-in function, a value of type LiteralByteSize can be
-   used transparently as a built-in Integer but with a different size measure:
-   see Note [Integral types as Integer].  This is required by the
+{- | When invoking a built-in function, a value of type `IntegerCostedAsByteSize`
+   can be used transparently as a built-in Integer but with a different size
+   measure: see Note [Integral types as Integer].  This is required by the
    `integerToByteString` builtin, which takes an argument `w` specifying the
    width (in bytes) of the output bytestring (zero-padded to the desired size).
    The memory consumed by the function is given by `w`, *not* the size of `w`.
-   The `LiteralByteSize` type wraps an Integer `w` in a newtype whose
+   The `IntegerCostedAsByteSize` type wraps an Integer `w` in a newtype whose
    `ExMemoryUsage` is equal to the number of eight-byte words required to
    contain `w` bytes, allowing its costing function to work properly.
 -}
-newtype LiteralByteSize = LiteralByteSize { unLiteralByteSize :: Integer }
-instance ExMemoryUsage LiteralByteSize where
-    memoryUsage (LiteralByteSize n) = singletonRose . fromIntegral $ ((n-1) `div` 8) + 1
+newtype IntegerCostedAsByteSize = IntegerCostedAsByteSize { unIntegerCostedAsByteSize :: Integer }
+instance ExMemoryUsage IntegerCostedAsByteSize where
+    memoryUsage (IntegerCostedAsByteSize n) = singletonRose . fromIntegral $ ((n-1) `div` 8) + 1
     {-# INLINE memoryUsage #-}
 
-newtype LiteralInteger = LiteralInteger { unLiteralInteger :: Integer }
-instance ExMemoryUsage LiteralInteger where
-    memoryUsage (LiteralInteger n) = singletonRose . fromIntegral $ abs n
+{- | A wrapper for Integers whose "memory usage" for costing purposes is the
+   absolute value of the integer.  This is used for costing built-in functions
+   such as `shiftByteString` and `rotateByteString`, where the cost may depend
+   on the actual value of the shift argument, not its size.
+-}
+newtype IntegerCostedLiterally = IntegerCostedLiterally { unIntegerCostedLiterally :: Integer }
+instance ExMemoryUsage IntegerCostedLiterally where
+    memoryUsage (IntegerCostedLiterally n) = singletonRose . fromIntegral $ abs n
     {-# INLINE memoryUsage #-}
 
 {- | A wrappper for lists whose "memory usage" for costing purposes is just the

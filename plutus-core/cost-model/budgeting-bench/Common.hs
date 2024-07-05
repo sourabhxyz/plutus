@@ -192,7 +192,7 @@ createOneTermBuiltinBench
     -> Benchmark
 createOneTermBuiltinBench name tys xs =
     bgroup (show name) $ [mkBM x | x <- xs]
-        where mkBM x = benchDefault (showMemoryUsage x) $ mkApp1 name tys x
+  where mkBM x = benchDefault (showMemoryUsage x) $ mkApp1 name tys x
 
 {- | Given a builtin function f of type a * b -> _ together with lists xs::[a] and
    ys::[b], create a collection of benchmarks which run f on all pairs in
@@ -210,7 +210,7 @@ createTwoTermBuiltinBench
     -> Benchmark
 createTwoTermBuiltinBench name tys xs ys =
      bgroup (show name) $ [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
-        where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 name tys x y
+  where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 name tys x y
 
 createTwoTermBuiltinBenchLiteralInY
     :: ( fun ~ DefaultFun, uni ~ DefaultUni
@@ -225,8 +225,8 @@ createTwoTermBuiltinBenchLiteralInY
     -> Benchmark
 createTwoTermBuiltinBenchLiteralInY fun tys xs ns =
     bgroup (show fun) $ [bgroup (showMemoryUsage x) [mkBM x n | n <- ns] | x <- xs]
-        where mkBM x n =
-                benchDefault (showMemoryUsage (LiteralInteger n)) $ mkApp2 fun tys x n
+  where mkBM x n =
+          benchDefault (showMemoryUsage (IntegerCostedLiterally n)) $ mkApp2 fun tys x n
 
 createTwoTermBuiltinBenchWithFlag
     :: ( fun ~ DefaultFun, uni ~ DefaultUni
@@ -242,7 +242,7 @@ createTwoTermBuiltinBenchWithFlag
     -> Benchmark
 createTwoTermBuiltinBenchWithFlag fun tys flag xs ys =
     bgroup (show fun) $ [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
-        where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp3 fun tys flag x y
+  where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp3 fun tys flag x y
 
 {- | Given a builtin function f of type a * b -> _ together with lists xs::[a] and
    ys::[b], create a collection of benchmarks which run f on all pairs in 'zip
@@ -267,7 +267,7 @@ createTwoTermBuiltinBenchElementwise
     -> Benchmark
 createTwoTermBuiltinBenchElementwise name tys xs ys =
     bgroup (show name) $ zipWith (\x y -> bgroup (showMemoryUsage x) [mkBM x y]) xs ys
-        where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 name tys x y
+  where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 name tys x y
 -- TODO: throw an error if xmem != ymem?  That would suggest that the caller has
 -- done something wrong.
 
@@ -284,8 +284,8 @@ createTwoTermBuiltinBenchElementwiseLiteralInX
     -> Benchmark
 createTwoTermBuiltinBenchElementwiseLiteralInX name tys xs ys =
     bgroup (show name) $
-      zipWith (\x y -> bgroup (showMemoryUsage (LiteralInteger x)) [mkBM x y]) xs ys
-        where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 name tys x y
+      zipWith (\x y -> bgroup (showMemoryUsage (IntegerCostedLiterally x)) [mkBM x y]) xs ys
+  where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 name tys x y
 -- TODO: throw an error if xmem != ymem?  That would suggest that the caller has
 -- done something wrong.
 
@@ -303,7 +303,7 @@ createTwoTermBuiltinBenchElementwiseLiteralInY
 createTwoTermBuiltinBenchElementwiseLiteralInY name tys xs ys =
     bgroup (show name) $
       zipWith (\x y -> bgroup (showMemoryUsage x) [mkBM x y]) xs ys
-        where mkBM x y = benchDefault (showMemoryUsage (LiteralInteger y)) $ mkApp2 name tys x y
+  where mkBM x y = benchDefault (showMemoryUsage (IntegerCostedLiterally y)) $ mkApp2 name tys x y
 
 {- | Given a builtin function f of type a * b * c -> _ together with a list of
    inputs of type (a,b,c), create a collection of benchmarks which run f on all
@@ -324,6 +324,6 @@ createThreeTermBuiltinBenchElementwise name tys inputs =
         map
             (\(x, y, z) -> bgroup (showMemoryUsage x) [bgroup (showMemoryUsage y) [mkBM x y z]])
             inputs
-        where mkBM x y z = benchDefault (showMemoryUsage z) $ mkApp3 name tys x y z
+  where mkBM x y z = benchDefault (showMemoryUsage z) $ mkApp3 name tys x y z
 -- TODO: throw an error if xmem != ymem?  That would suggest that the caller has
 -- done something wrong.

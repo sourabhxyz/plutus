@@ -21,9 +21,10 @@ import PlutusCore.Data (Data (..))
 import PlutusCore.Default.Universe
 import PlutusCore.Evaluation.Machine.BuiltinCostModel
 import PlutusCore.Evaluation.Machine.ExBudgetStream (ExBudgetStream)
-import PlutusCore.Evaluation.Machine.ExMemoryUsage (ExMemoryUsage, ListCostedByLength (..),
-                                                    LiteralByteSize (..), LiteralInteger (..),
-                                                    memoryUsage, singletonRose)
+import PlutusCore.Evaluation.Machine.ExMemoryUsage (ExMemoryUsage, IntegerCostedAsByteSize (..),
+                                                    IntegerCostedLiterally (..),
+                                                    ListCostedByLength (..), memoryUsage,
+                                                    singletonRose)
 import PlutusCore.Pretty (PrettyConfigPlc)
 
 import PlutusCore.Bitwise qualified as Bitwise
@@ -1867,10 +1868,10 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
     -- Conversions
     {- See Note [Input length limitation for IntegerToByteString] -}
     toBuiltinMeaning _semvar IntegerToByteString =
-        let integerToByteStringDenotation :: Bool -> LiteralByteSize -> Integer -> BuiltinResult BS.ByteString
-            {- The second argument is wrapped in a LiteralByteSize to allow us to interpret it as a size during
+        let integerToByteStringDenotation :: Bool -> IntegerCostedAsByteSize -> Integer -> BuiltinResult BS.ByteString
+            {- The second argument is wrapped in a IntegerCostedAsByteSize to allow us to interpret it as a size during
                costing.  It appears as an integer in UPLC: see Note [Integral types as Integer]. -}
-            integerToByteStringDenotation b (LiteralByteSize w) = Bitwise.integerToByteStringWrapper b w
+            integerToByteStringDenotation b (IntegerCostedAsByteSize w) = Bitwise.integerToByteStringWrapper b w
             {-# INLINE integerToByteStringDenotation #-}
         in makeBuiltinMeaning
             integerToByteStringDenotation
@@ -1936,8 +1937,8 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             (runCostingFunTwoArguments . paramWriteBits)
 
     toBuiltinMeaning _semvar ReplicateByte =
-        let replicateByteDenotation :: LiteralInteger -> Word8 -> BuiltinResult BS.ByteString
-            replicateByteDenotation (LiteralInteger n) w = Bitwise.replicateByte n w
+        let replicateByteDenotation :: IntegerCostedLiterally -> Word8 -> BuiltinResult BS.ByteString
+            replicateByteDenotation (IntegerCostedLiterally n) w = Bitwise.replicateByte n w
             -- FIXME: be careful about the coercion inreplicateByte
             {-# INLINE replicateByteDenotation #-}
         in makeBuiltinMeaning
@@ -1945,16 +1946,16 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             (runCostingFunTwoArguments . paramReplicateByte)
 
     toBuiltinMeaning _semvar ShiftByteString =
-        let shiftByteStringDenotation :: BS.ByteString -> LiteralInteger -> BS.ByteString
-            shiftByteStringDenotation s (LiteralInteger n) = Bitwise.shiftByteString s (fromIntegral n)
+        let shiftByteStringDenotation :: BS.ByteString -> IntegerCostedLiterally -> BS.ByteString
+            shiftByteStringDenotation s (IntegerCostedLiterally n) = Bitwise.shiftByteString s (fromIntegral n)
             {-# INLINE shiftByteStringDenotation #-}
         in makeBuiltinMeaning
             shiftByteStringDenotation
             (runCostingFunTwoArguments . paramShiftByteString)
 
     toBuiltinMeaning _semvar RotateByteString =
-        let rotateByteStringDenotation :: BS.ByteString -> LiteralInteger -> BS.ByteString
-            rotateByteStringDenotation s (LiteralInteger n) = Bitwise.rotateByteString s (fromIntegral n)
+        let rotateByteStringDenotation :: BS.ByteString -> IntegerCostedLiterally -> BS.ByteString
+            rotateByteStringDenotation s (IntegerCostedLiterally n) = Bitwise.rotateByteString s (fromIntegral n)
             {-# INLINE rotateByteStringDenotation #-}
         in makeBuiltinMeaning
             rotateByteStringDenotation

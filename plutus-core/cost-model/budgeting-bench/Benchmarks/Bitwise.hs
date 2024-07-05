@@ -87,7 +87,7 @@ benchIntegerToByteString =
                       -- Widths are in words: we need to convert those to widths in bytes for the implementation
                       let width' = 8 * fromIntegral width
                       in bgroup (showMemoryUsage e) [
-                              bgroup (showMemoryUsage (LiteralByteSize width')) [mkBM e width' n]
+                              bgroup (showMemoryUsage (IntegerCostedAsByteSize width')) [mkBM e width' n]
                              ]
                           where mkBM x y z = benchDefault (showMemoryUsage z) $ mkApp3 b [] x y z
             in bgroup (show b) $ fmap mkOneBM l
