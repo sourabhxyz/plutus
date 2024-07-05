@@ -226,7 +226,7 @@ createTwoTermBuiltinBenchLiteralInY
 createTwoTermBuiltinBenchLiteralInY fun tys xs ns =
     bgroup (show fun) $ [bgroup (showMemoryUsage x) [mkBM x n | n <- ns] | x <- xs]
         where mkBM x n =
-                benchDefault (showMemoryUsage (LiteralInteger (abs n))) $ mkApp2 fun tys x n
+                benchDefault (showMemoryUsage (LiteralInteger n)) $ mkApp2 fun tys x n
 
 createTwoTermBuiltinBenchWithFlag
     :: ( fun ~ DefaultFun, uni ~ DefaultUni

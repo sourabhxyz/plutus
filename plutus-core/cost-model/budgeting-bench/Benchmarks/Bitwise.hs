@@ -113,9 +113,9 @@ as well (t ~ pmin(x,y) + abs(x-y)) then we get a model that extends well to
 larger data.  Equivalently we can fit t~x+y to the data for y<=x, but then we'd
 have to swap the inputs for y>x.
 
-I(x+y) does a good job though: we get within +/-5% for the small data and -20%
-to +5% for big data. We could try fitting t=a+bx along x=y for the small data
-and then extrapolate that to a/2+ b/2(x+y) elsewhere.
+A model for t~x+y does a good job though: we get within +/-5% for the small data
+and -20% to +5% for big data. We could also try fitting t=a+bx along x=y for the
+small data and then extrapolate that to a/2+ b/2(x+y) elsewhere.
 -}
 
 benchAndByteString :: Benchmark
@@ -131,7 +131,6 @@ benchComplementByteString =
   let xs = largeSample seedA
   in createOneTermBuiltinBench ComplementByteString [] xs
 
-
 {- readBit is pretty much constant time regardless of input size and the position of
 the bit to be read. -}
 benchReadBit :: Benchmark
@@ -143,31 +142,38 @@ benchReadBit =
 
 {- Benchmarks show that the time taken by `writeBits` depends mostly on the size
    of the list of updates, although it may take a little longer to write bits
-   with larger indices.  We run all of the benchmarks on a 1000-byte bytestring
-   and benchmark the time taken to write the highest-indexed bit to take account
-   of this.
+   with larger indices.  We run benchmarks involving increasing numbers of
+   updates to 1024-byte bytestrings, always writing the highest-indexed bit to
+   take account of this.  We use a fresh bytestring for each set of updates.
 -}
 benchWriteBits :: Benchmark
 benchWriteBits =
   let fun = WriteBits
-      len = 1600
-      bs = BS.replicate len 0xFF
+      len = 1024
+      xs = makeSizedByteStrings seedA $ take largeSampleNum $ repeat len
       topIndex :: Integer = fromIntegral $ 8*len - 1
-      mkUpdates k = replicate (10*k) (topIndex, True) -- write the highest bit 10*k times
+      mkUpdates k = take (10*k) $ cycle [(topIndex, False), (topIndex, True)] -- write the highest bit 10*k times
       updates = fmap mkUpdates [1..largeSampleNum]
-      mkBM :: [(Integer, Bool)] -> Benchmark
-      mkBM l = benchDefault (showMemoryUsage (ListCostedByLength l)) $ mkApp2 fun [] bs l
-  in bgroup (show fun) $ [bgroup (showMemoryUsage bs) $ fmap mkBM updates]
+      mkBM x y = benchDefault (showMemoryUsage (ListCostedByLength y)) $ mkApp2 fun [] x y
+  in bgroup (show fun) $ zipWith (\x y -> bgroup (showMemoryUsage x) $ [mkBM x y]) xs updates
+  -- This is like createTwoTermBuiltinBenchElementwise except that the benchmark
+  -- name contains the length of thelist of updates, not its memory usage.  The
+  -- denotation of WriteBits in Default.Builtins must wrap its second argument
+  -- in ListCostedByLength to make sure that the correct ExMemoryUsage instance
+  -- is called for costing.
 
 {- For small inputs `replicateByte` looks constant-time.  For larger inputs it's
-   linear. A model based on large data overestimates the small results, but not
-   too badly.
+   linear.  We're limiting the output to 8192 bytes (size 1024), so we may as
+   well test the whole legal range.  NB: if we change the value of
+   integerToByteStringMaximumOutputLength then we might need to change the
+   limits here too.
 -}
 benchReplicateByte :: Benchmark
 benchReplicateByte =
-  let ys = replicate largeSampleNum (0xFF :: Integer)
-  in createTwoTermBuiltinBenchElementwiseLiteralInX ReplicateByte []
-       (fmap (fromIntegral . (8*)) largeSampleSizes) ys
+  let numSamples = 128 :: Int
+      xs = fmap (fromIntegral . (8*)) [1..numSamples] :: [Integer]
+      ys = replicate numSamples (0xFF :: Integer)
+  in createTwoTermBuiltinBenchElementwiseLiteralInX ReplicateByte [] xs ys
 
 {- Benchmarks with varying sizes of bytestrings and varying amounts of shifting
    show that the execution time of `shiftByteString` depends linearly on the
