@@ -75,14 +75,14 @@ mkDsignBmInputs :: forall v msg .
     -> [(ByteString, ByteString, ByteString)]
 mkDsignBmInputs toMsg msgSize =
     map mkOneInput (zip seeds messages)
-    where seeds = listOfSizedByteStrings numSamples 128
+    where seeds = listOfByteStringsOfLength numSamples 128
           -- ^ Seeds for key generation. For some algorithms the seed has to be
           -- a certain minimal size and there's a SeedBytesExhausted error if
           -- it's not big enough; 128 is big enough for everything here though.
           messages =
               case msgSize of
                 Arbitrary -> bigByteStrings seedA
-                Fixed n   -> listOfSizedByteStrings numSamples n
+                Fixed n   -> listOfByteStringsOfLength numSamples n
           mkOneInput (seed, msg) =
               let signKey = genKeyDSIGN @v $ mkSeedFromBytes seed                 -- Signing key (private)
                   vkBytes = rawSerialiseVerKeyDSIGN $ deriveVerKeyDSIGN signKey   -- Verification key (public)
@@ -126,7 +126,7 @@ benchByteStringOneArgOp name =
 
 
 byteStrings :: [ByteString]
-byteStrings = listOfSizedByteStrings 200 20
+byteStrings = listOfByteStringsOfLength 200 20
 
 byteStringsA :: [ByteString]
 byteStringsA = take 100 byteStrings
@@ -206,7 +206,7 @@ benchBls12_381_G1_hashToGroup =
         inputs = listOfByteStrings 100
         -- The maximum length of a DST is 255 bytes, so let's use that for all
         -- cases (DST size shouldn't make much difference anyway).
-        dsts = listOfSizedByteStrings 100 255
+        dsts = listOfByteStringsOfLength 100 255
     in createTwoTermBuiltinBenchElementwise name [] inputs dsts
 -- linear in input size
 
@@ -252,7 +252,7 @@ benchBls12_381_G2_hashToGroup :: Benchmark
 benchBls12_381_G2_hashToGroup =
     let name = Bls12_381_G2_hashToGroup
         inputs = listOfByteStrings 100
-        dsts = listOfSizedByteStrings 100 255
+        dsts = listOfByteStringsOfLength 100 255
     in createTwoTermBuiltinBenchElementwise name [] inputs dsts
 -- linear in size of input
 
