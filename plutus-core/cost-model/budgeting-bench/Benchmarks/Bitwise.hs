@@ -24,7 +24,7 @@ smallSampleNum = 40
 smallSampleSizes :: [Int]
 smallSampleSizes = fmap (10 *) [1..smallSampleNum]
 
--- Smallish bytestring inputs: 50 entries.  Note that the length of a
+-- Smallish bytestring inputs: 40 entries.  Note that the length of a
 -- bytestring is eight times the size.
 smallSample :: H.Seed -> [BS.ByteString]
 smallSample seed = makeSizedByteStrings seed smallSampleSizes
@@ -118,6 +118,9 @@ and -20% to +5% for big data. We could also try fitting t=a+bx along x=y for the
 small data and then extrapolate that to a/2+ b/2(x+y) elsewhere.
 -}
 
+
+-- TODO: Maybe reduce the number of cases here: we've currently got 1600, and at
+-- 5 seconds per benchmark that's at least 2 hours and 10 minutes.
 benchAndByteString :: Benchmark
 benchAndByteString =
   let xs = smallSample seedA
@@ -149,15 +152,15 @@ benchReadBit =
 benchWriteBits :: Benchmark
 benchWriteBits =
   let fun = WriteBits
-      len = 1024
-      xs = makeSizedByteStrings seedA $ take largeSampleNum $ repeat len
-      topIndex :: Integer = fromIntegral $ 8*len - 1
+      size = 1024 -- This is making bytestrings of length 8192.
+      xs = makeSizedByteStrings seedA $ take largeSampleNum $ repeat size
+      topIndex :: Integer = fromIntegral $ 8*size  - 1
       mkUpdates k = take (10*k) $ cycle [(topIndex, False), (topIndex, True)] -- write the highest bit 10*k times
       updates = fmap mkUpdates [1..largeSampleNum]
       mkBM x y = benchDefault (showMemoryUsage (ListCostedByLength y)) $ mkApp2 fun [] x y
   in bgroup (show fun) $ zipWith (\x y -> bgroup (showMemoryUsage x) $ [mkBM x y]) xs updates
   -- This is like createTwoTermBuiltinBenchElementwise except that the benchmark
-  -- name contains the length of thelist of updates, not its memory usage.  The
+  -- name contains the length of the list of updates, not the memory usage.  The
   -- denotation of WriteBits in Default.Builtins must wrap its second argument
   -- in ListCostedByLength to make sure that the correct ExMemoryUsage instance
   -- is called for costing.
@@ -223,7 +226,7 @@ benchCountSetBits =
    use 0x8000...00 just to avoid the all-zeros case in case someone attempts to
    optimise for that case at some time in the future.  For small data the worst
    case takes up to 8% longer than the best case (0x00..01) and for large data
-   it can take up 40% longer. A model based on small input sizes extrapolates
+   it can take up to 40% longer. A model based on small input sizes extrapolates
    well to results for large inputs. -}
 benchFindFirstSetBit :: Benchmark
 benchFindFirstSetBit =

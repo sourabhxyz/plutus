@@ -451,7 +451,6 @@ data ModelTwoArguments =
   | ModelTwoArgumentsConstBelowDiagonal  ModelConstantOrTwoArguments
   | ModelTwoArgumentsQuadraticInY        OneVariableQuadraticFunction
   | ModelTwoArgumentsQuadraticInXAndY    TwoVariableQuadraticFunction
-  | ModelTwoArgumentsLiteralInX          OneVariableLinearFunction
     deriving stock (Show, Eq, Generic, Lift)
     deriving anyclass (NFData)
 
@@ -587,9 +586,6 @@ runTwoArgumentModel
              let !size1 = sumCostStream costs1
                  !size2 = sumCostStream costs2
              in CostLast $ evaluateTwoVariableQuadraticFunction f size1 size2
-runTwoArgumentModel
-    (ModelTwoArgumentsLiteralInX (OneVariableLinearFunction intercept slope)) =
-        lazy $ \costs1 _ -> scaleLinearly intercept slope costs1
 {-# NOINLINE runTwoArgumentModel #-}
 
 
@@ -643,7 +639,11 @@ runThreeArgumentModel
    `integerToByteString`, where if the second argument is zero, the output
    bytestring has the minimum length required to contain the converted integer,
    but if the second argument is nonzero it specifies the exact length of the
-   output bytestring. -}
+   output bytestring. We could generalise this to something like `LinearInYOrZ`
+   since the argument wrapping takes care of calculating the memory usages for
+   us anyway (the costing function here knows nothing about the wrapper: it just
+   gets a number from `onMemoryUsages`).
+-}
 runThreeArgumentModel
     (ModelThreeArgumentsLiteralInYOrLinearInZ (OneVariableLinearFunction intercept slope)) =
         lazy $ \_ costs2 costs3 ->

@@ -1937,9 +1937,9 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             (runCostingFunTwoArguments . paramWriteBits)
 
     toBuiltinMeaning _semvar ReplicateByte =
-        let replicateByteDenotation :: IntegerCostedLiterally -> Word8 -> BuiltinResult BS.ByteString
-            replicateByteDenotation (IntegerCostedLiterally n) w = Bitwise.replicateByte n w
-            -- FIXME: be careful about the coercion inreplicateByte
+        let replicateByteDenotation :: IntegerCostedAsByteSize -> Word8 -> BuiltinResult BS.ByteString
+            replicateByteDenotation (IntegerCostedAsByteSize n) w = Bitwise.replicateByte n w
+            -- FIXME: be careful about the coercion in replicateByte
             {-# INLINE replicateByteDenotation #-}
         in makeBuiltinMeaning
             replicateByteDenotation

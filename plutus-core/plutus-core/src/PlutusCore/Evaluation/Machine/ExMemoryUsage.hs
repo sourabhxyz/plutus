@@ -178,7 +178,8 @@ instance ExMemoryUsage () where
    The memory consumed by the function is given by `w`, *not* the size of `w`.
    The `IntegerCostedAsByteSize` type wraps an Integer `w` in a newtype whose
    `ExMemoryUsage` is equal to the number of eight-byte words required to
-   contain `w` bytes, allowing its costing function to work properly.
+   contain `w` bytes, allowing its costing function to work properly.  We also
+   use this for `replicateByte`.
 -}
 newtype IntegerCostedAsByteSize = IntegerCostedAsByteSize { unIntegerCostedAsByteSize :: Integer }
 instance ExMemoryUsage IntegerCostedAsByteSize where
@@ -201,8 +202,6 @@ newtype ListCostedByLength a = ListCostedByLength { unListCostedByLength :: [a] 
 instance ExMemoryUsage (ListCostedByLength a) where
     memoryUsage (ListCostedByLength l) = singletonRose . fromIntegral $ length l
     {-# INLINE memoryUsage #-}
-
-
 
 -- | Calculate a 'CostingInteger' for the given 'Integer'.
 memoryUsageInteger :: Integer -> CostingInteger

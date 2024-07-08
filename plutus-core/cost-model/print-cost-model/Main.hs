@@ -55,6 +55,16 @@ renderTwoVariableQuadraticFunction
     printf "max(%d, %d + %d*%s + %d*%s + %d*%s^2 + %d*%s*%s + %d*%s^2)"
     minVal c00 c10 var1 c01 var2 c20 var1 c11 var1 var2 c02 var2
 
+-- FIXME.  This is arguably slightly incorrect because some of the arguments are
+-- wrapped in newtypes that change the memory usage instance of their content
+-- and this isn't reflected in the output.  We're able to fix this for
+-- LiteralInYOrLinearInZ since we can tell from the constructor that the second
+-- argument is wrapped, but this doesn't work for `replicateByte`, where the
+-- replication count is wrapped in IntegerCostedAsByteSize and we don't see that
+-- here.  We should really print "x bytes" instead of just "x", but to fix that
+-- we'd need access to the signatures of the builtins here as well.  Maybe it
+-- could be argued that the user should be aware of the wrappings and interpret
+-- the output accordingly, but it would be helpful to make it explicit.
 renderModel :: Model -> [String]
 renderModel =
     \case
@@ -66,7 +76,6 @@ renderModel =
      LinearInX             f   -> [ renderLinearFunction f "x" ]
      LinearInY             f   -> [ renderLinearFunction f "y" ]
      LinearInZ             f   -> [ renderLinearFunction f "z" ]
-     LiteralInX                -> [ printf "x bytes" ]
      QuadraticInY          f   -> [ renderOneVariableQuadraticFunction f "y" ]
      QuadraticInZ          f   -> [ renderOneVariableQuadraticFunction f "z" ]
      QuadraticInXAndY      f   -> [ renderTwoVariableQuadraticFunction f "x" "y" ]

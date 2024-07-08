@@ -1061,7 +1061,7 @@
                 "intercept": 1,
                 "slope": 1
             },
-            "type": "literal_in_x"
+            "type": "linear_in_x"
         }
     },
     "shiftByteString": {
