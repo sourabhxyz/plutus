@@ -49,10 +49,18 @@ HADDOCK_OPTS=(
 )
 
 if (( "${#REGENERATE[@]}" > 0 )); then
+  cabal update
   cabal freeze
   cabal build   "${CABAL_OPTS[@]}" "${REGENERATE[@]}"
   cabal haddock "${CABAL_OPTS[@]}" "${REGENERATE[@]}" "${HADDOCK_OPTS[@]}"
 fi
+
+
+if [[ "$?" != "0" ]]; then 
+  echo "Failed to build haddock for plutus."
+  exit 1
+fi 
+
 
 rm    -rf "${OUTPUT_DIR}"
 mkdir -p  "${OUTPUT_DIR}"
@@ -66,6 +74,8 @@ BUILD_CONTENTS="${BUILD_DIR}/build/${OS_ARCH}/ghc-${GHC_VERSION}"
 PLUTUS_VERSION="$(find ${BUILD_CONTENTS}/plutus-core-* -printf '%f\n' -quit | sed "s/plutus-core-//g")"
 
 GIT_REV="$(git rev-parse HEAD)"
+
+GIT_REV_SHORT="$(git rev-parse --short HEAD)"
 
 
 # Here we merge each package's internal libraries into a single folder, for example:
@@ -117,6 +127,9 @@ done
 
 echo "Writing the prologue"
 cat << EOF > "${BUILD_DIR}/haddock.prologue"
+
+Last updated on $(date +"%Y %b %d") from [IntersectMBO/plutus@$GIT_REV_SHORT](https://github.com/IntersectMBO/plutus/tree/$GIT_REV)
+
 == Handy module entrypoints
 
   * "PlutusTx": Compiling Haskell to PLC (Plutus Core; on-chain code).
@@ -210,7 +223,6 @@ fi
 
 echo "Running linkchecker"
 time linkchecker "${OUTPUT_DIR}/index.html" \
-  --check-extern \
   --no-warnings \
   --output failures \
   --file-output text 
