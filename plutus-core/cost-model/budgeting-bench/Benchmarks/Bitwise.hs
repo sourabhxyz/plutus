@@ -90,8 +90,8 @@ benchIntegerToByteString =
   400 bytes) for small inputs.
 -}
 
--- NO!!!!  Now we're going up to size 150 for most of the builtins.  Check what we actually used in
--- the original benchmarks.
+-- NO!!!!  Now we're going up to size 150 for most of the builtins.  Check what
+-- we actually used in the original benchmarks.
 
 {- For AndByteString with different-sized inputs, calling it with extension
 semantics (ie, first argument=True) takes up to about 5% longer than with
@@ -112,7 +112,7 @@ small data and then extrapolate that to a/2+ b/2(x+y) elsewhere.
 
 benchAndByteString :: Benchmark
 benchAndByteString =
-  let inputSizes = fmap (20*) [1..25]  -- 625 cases, which should take an hour or so.
+  let inputSizes = fmap (20*) [1..25]  -- 20..400: 625 cases, which should take an hour or so.
       xs = makeSizedByteStrings seedA inputSizes
       ys = makeSizedByteStrings seedB inputSizes
   in createTwoTermBuiltinBenchWithFlag AndByteString [] True xs ys
@@ -186,7 +186,7 @@ benchWriteBits1024 =
 -}
 benchReplicateByte :: Benchmark
 benchReplicateByte =
-  let numCases = 128 :: Int
+  let numCases = 128 :: Int  -- Only 1/8 of the whole range
       xs = fmap (fromIntegral . (8*)) [1..numCases] :: [Integer]
       ys = replicate numCases (0xFF :: Integer)
   in createTwoTermBuiltinBenchElementwiseLiteralInX ReplicateByte [] xs ys
@@ -230,7 +230,7 @@ benchRotateBytestring =
    take 1% or so longer than for an all-0x00 bytestring. -}
 benchCountSetBits :: Benchmark
 benchCountSetBits =
-  let xs = fmap (\n -> BS.replicate (8*n) 0xFF) sampleSizes
+  let xs = fmap (\n -> BS.replicate (8*n) 0xFF) sampleSizes  -- length 8, 16, ..., 1200
   in createOneTermBuiltinBench CountSetBits [] xs
 
 {- For FindFirstSetBits the time taken is pretty much linear in the length, with
@@ -243,7 +243,7 @@ benchCountSetBits =
    well to results for large inputs. -}
 benchFindFirstSetBit :: Benchmark
 benchFindFirstSetBit =
-  let xs = fmap (\n -> BS.cons 0x80 (BS.replicate (8*(n-1)) 0x00)) sampleSizes
+  let xs = fmap (\n -> BS.cons 0x80 (BS.replicate (8*n-1) 0x00)) sampleSizes
   in createOneTermBuiltinBench FindFirstSetBit [] xs
 
 makeBenchmarks :: [Benchmark]
