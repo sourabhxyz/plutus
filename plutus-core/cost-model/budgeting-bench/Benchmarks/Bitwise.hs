@@ -178,18 +178,18 @@ benchWriteBits1024 =
       mkBM x y = benchDefault (showMemoryUsage (ListCostedByLength y)) $ mkApp2 fun [] x y
   in bgroup (show fun) $ fmap(\(s,u) -> bgroup (showMemoryUsage s) $ [mkBM s u]) inputs
 
-{- For small inputs `replicateByte` looks constant-time.  For larger inputs it's
-   linear.  We're limiting the output to 8192 bytes (size 1024), so we may as
-   well test the whole legal range.  NB: if we change the value of
-   integerToByteStringMaximumOutputLength then we might need to change the
-   limits here too.
+{- For small inputs `replicateByte` looks constant-time.  For larger inputs it's linear.
+   We're limiting the output to 8192 bytes (size 1024), so we may as well test the whole
+   legal range.  NB: if we change the value of integerToByteStringMaximumOutputLength then
+   we probably need to change the limits here too.
 -}
 benchReplicateByte :: Benchmark
 benchReplicateByte =
-  let numCases = 128 :: Int  -- Only 1/8 of the whole range
-      xs = fmap (fromIntegral . (8*)) [1..numCases] :: [Integer]
+  let numCases = 128 :: Int
+      xs = fmap (fromIntegral . (64*)) [1..numCases] :: [Integer]
+      -- ^ This gives us replication counts up to 64*128 = 8192, the maximum allowed.
       ys = replicate numCases (0xFF :: Integer)
-  in createTwoTermBuiltinBenchElementwiseLiteralInX ReplicateByte [] xs ys
+  in createTwoTermBuiltinBenchElementwiseWithXAsByteSize ReplicateByte [] xs ys
 
 {- Benchmarks with varying sizes of bytestrings and varying amounts of shifting
    show that the execution time of `shiftByteString` depends linearly on the

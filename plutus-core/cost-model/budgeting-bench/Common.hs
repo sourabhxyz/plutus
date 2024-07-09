@@ -289,6 +289,24 @@ createTwoTermBuiltinBenchElementwiseLiteralInX name tys xs ys =
 -- TODO: throw an error if xmem != ymem?  That would suggest that the caller has
 -- done something wrong.
 
+createTwoTermBuiltinBenchElementwiseWithXAsByteSize
+    :: ( fun ~ DefaultFun, uni ~ DefaultUni
+       , uni `HasTermLevel` b
+       , ExMemoryUsage b
+       , NFData b
+       )
+    => fun
+    -> [Type tyname uni ()]
+    -> [Integer]
+    -> [b]
+    -> Benchmark
+createTwoTermBuiltinBenchElementwiseWithXAsByteSize name tys xs ys =
+    bgroup (show name) $
+      zipWith (\x y -> bgroup (showMemoryUsage (IntegerCostedAsByteSize x)) [mkBM x y]) xs ys
+  where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 name tys x y
+-- TODO: throw an error if xmem != ymem?  That would suggest that the caller has
+-- done something wrong.
+
 createTwoTermBuiltinBenchElementwiseLiteralInY
     :: ( fun ~ DefaultFun, uni ~ DefaultUni
        , uni `HasTermLevel` a
