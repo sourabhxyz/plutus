@@ -62,12 +62,14 @@ benchByteStringToInteger =  createTwoTermBuiltinBenchElementwise ByteStringToInt
  It's important to make sure that the memory cost does take account of the width
  though. -}
 
--- Make sure that the input integer really does require the full width so that
--- the conversion does the maximum amount of work.
+-- FIXME?  Make sure that the input integer really does require the full width so that the
+-- conversion does the maximum amount of work.  We could do this by converting 0xFF...FF
+-- to aninteger.  The sample we use gives us bytestrings up to 8*150 = 1200 bytes long.
+-- This is well within the 8192-byte limit.
 benchIntegerToByteString :: Benchmark
 benchIntegerToByteString =
     let b = IntegerToByteString
-        widths = sampleSizes
+        widths = fmap (10*) [1..160]
         inputs = fmap repunit widths
         -- This is like createThreeTermBuiltinBenchElementwise, but we want to
         -- make sure that the width appears literally in the benchmark name.
@@ -161,10 +163,12 @@ benchWriteBits100 =
   -- in ListCostedByLength to make sure that the correct ExMemoryUsage instance
   -- is called for costing.
 
+-- FIXME: remove the duplicate
+
 benchWriteBits1024 :: Benchmark
 benchWriteBits1024 =
   let fun = WriteBits
-      size = 1024  -- This is equal to length 8192
+      size = 1024
       xs = makeSizedByteStrings seedA $ take numSamples $ repeat size
       l = zip xs [1..numSamples]
       -- Given a bytestring s and an integer k, return a pair (s,u) where u is a list of updates
