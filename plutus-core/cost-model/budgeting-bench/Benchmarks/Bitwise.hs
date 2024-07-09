@@ -69,7 +69,7 @@ benchByteStringToInteger =  createTwoTermBuiltinBenchElementwise ByteStringToInt
 benchIntegerToByteString :: Benchmark
 benchIntegerToByteString =
     let b = IntegerToByteString
-        widths = fmap (10*) [1..160]
+        widths = sampleSizes
         inputs = fmap repunit widths
         -- This is like createThreeTermBuiltinBenchElementwise, but we want to
         -- make sure that the width appears literally in the benchmark name.
