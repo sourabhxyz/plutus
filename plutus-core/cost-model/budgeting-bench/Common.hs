@@ -271,6 +271,10 @@ createTwoTermBuiltinBenchElementwise name tys xs ys =
 -- TODO: throw an error if xmem != ymem?  That would suggest that the caller has
 -- done something wrong.
 
+
+-- Some variations on `createTwoTermBuiltinBenchElementwise`.  For a number of
+-- builtins we want to measure the memory usage of an argument in a non-standard
+-- way and these functions wrap the relevant arguments in appropriate newtypes.
 createTwoTermBuiltinBenchElementwiseLiteralInX
     :: ( fun ~ DefaultFun, uni ~ DefaultUni
        , uni `HasTermLevel` b
@@ -286,8 +290,24 @@ createTwoTermBuiltinBenchElementwiseLiteralInX name tys xs ys =
     bgroup (show name) $
       zipWith (\x y -> bgroup (showMemoryUsage (IntegerCostedLiterally x)) [mkBM x y]) xs ys
   where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 name tys x y
--- TODO: throw an error if xmem != ymem?  That would suggest that the caller has
--- done something wrong.
+
+createTwoTermBuiltinBenchElementwiseWrappingX
+    :: ( fun ~ DefaultFun, uni ~ DefaultUni
+       , uni `HasTermLevel` b
+       , ExMemoryUsage a
+       , ExMemoryUsage b
+       , NFData b
+       )
+    => (Integer -> a)
+    -> fun
+    -> [Type tyname uni ()]
+    -> [Integer]
+    -> [b]
+    -> Benchmark
+createTwoTermBuiltinBenchElementwiseWrappingX wrapper name tys xs ys =
+    bgroup (show name) $
+      zipWith (\x y -> bgroup (showMemoryUsage (wrapper x)) [mkBM x y]) xs ys
+  where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 name tys x y
 
 createTwoTermBuiltinBenchElementwiseWithXAsByteSize
     :: ( fun ~ DefaultFun, uni ~ DefaultUni
@@ -304,8 +324,6 @@ createTwoTermBuiltinBenchElementwiseWithXAsByteSize name tys xs ys =
     bgroup (show name) $
       zipWith (\x y -> bgroup (showMemoryUsage (IntegerCostedAsByteSize x)) [mkBM x y]) xs ys
   where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 name tys x y
--- TODO: throw an error if xmem != ymem?  That would suggest that the caller has
--- done something wrong.
 
 createTwoTermBuiltinBenchElementwiseLiteralInY
     :: ( fun ~ DefaultFun, uni ~ DefaultUni
@@ -343,5 +361,3 @@ createThreeTermBuiltinBenchElementwise name tys inputs =
             (\(x, y, z) -> bgroup (showMemoryUsage x) [bgroup (showMemoryUsage y) [mkBM x y z]])
             inputs
   where mkBM x y z = benchDefault (showMemoryUsage z) $ mkApp3 name tys x y z
--- TODO: throw an error if xmem != ymem?  That would suggest that the caller has
--- done something wrong.
