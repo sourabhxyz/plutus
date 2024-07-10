@@ -65,10 +65,11 @@ benchByteStringToInteger =  createTwoTermBuiltinBenchElementwise ByteStringToInt
 benchIntegerToByteString :: Benchmark
 benchIntegerToByteString =
     let b = IntegerToByteString
-        widths = fmap fromIntegral sampleSizes
+        -- Widths are in words: we need to convert those to widths in bytes for the implementation
+        widths = fmap (fromIntegral .(8*)) sampleSizes
         inputs = fmap repunit widths
     in createThreeTermBuiltinBenchElementwiseWithWrappers
-       (id, IntegerCostedAsByteSize, id) b [] $
+       (id, IntegerCostedAsNumBytes, id) b [] $
        zip3 (repeat True) widths inputs
 
 {- For `andByteString` with different-sized inputs, calling it with extension
@@ -153,7 +154,7 @@ benchReplicateByte =
       -- ^ This gives us replication counts up to 64*128 = 8192, the maximum allowed.
       ys = replicate numCases (0xFF :: Integer)
   in createTwoTermBuiltinBenchElementwiseWithWrappers
-     (IntegerCostedAsByteSize, id) ReplicateByte [] xs ys
+     (IntegerCostedAsNumBytes, id) ReplicateByte [] xs ys
 
 {- Benchmarks with varying sizes of bytestrings and varying amounts of shifting
    show that the execution time of `shiftByteString` depends linearly on the

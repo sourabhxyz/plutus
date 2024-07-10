@@ -10,7 +10,7 @@ module PlutusCore.Evaluation.Machine.ExMemoryUsage
     , singletonRose
     , ExMemoryUsage(..)
     , flattenCostRose
-    , IntegerCostedAsByteSize(..)
+    , IntegerCostedAsNumBytes(..)
     , IntegerCostedLiterally(..)
     , ListCostedByLength(..)
     ) where
@@ -170,22 +170,22 @@ instance ExMemoryUsage () where
     memoryUsage () = singletonRose 1
     {-# INLINE memoryUsage #-}
 
-{- | When invoking a built-in function, a value of type `IntegerCostedAsByteSize`
+{- | When invoking a built-in function, a value of type `IntegerCostedAsNumBytes`
    can be used transparently as a built-in Integer but with a different size
    measure: see Note [Integral types as Integer].  This is required by the
    `integerToByteString` builtin, which takes an argument `w` specifying the
    width (in bytes) of the output bytestring (zero-padded to the desired size).
    The memory consumed by the function is given by `w`, *not* the size of `w`.
-   The `IntegerCostedAsByteSize` type wraps an Integer `w` in a newtype whose
+   The `IntegerCostedAsNumBytes` type wraps an Integer `w` in a newtype whose
    `ExMemoryUsage` is equal to the number of eight-byte words required to
    contain `w` bytes, allowing its costing function to work properly.  We also
    use this for `replicateByte`.  If this is used to wrap an argument in the
    denotation of a builtin then it *MUST* also be used to wrap the same argument
    in the relevant budgeting benchmark.
 -}
-newtype IntegerCostedAsByteSize = IntegerCostedAsByteSize { unIntegerCostedAsByteSize :: Integer }
-instance ExMemoryUsage IntegerCostedAsByteSize where
-    memoryUsage (IntegerCostedAsByteSize n) = singletonRose . fromIntegral $ ((n-1) `div` 8) + 1
+newtype IntegerCostedAsNumBytes = IntegerCostedAsNumBytes { unIntegerCostedAsNumBytes :: Integer }
+instance ExMemoryUsage IntegerCostedAsNumBytes where
+    memoryUsage (IntegerCostedAsNumBytes n) = singletonRose . fromIntegral $ ((n-1) `div` 8) + 1
     {-# INLINE memoryUsage #-}
 
 {- | A wrapper for Integers whose "memory usage" for costing purposes is the
