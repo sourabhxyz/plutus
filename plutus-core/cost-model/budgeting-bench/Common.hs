@@ -195,7 +195,7 @@ createOneTermBuiltinBench
   -> [a]
   -> Benchmark
 createOneTermBuiltinBench fun tys xs =
-    bgroup (show fun) $ [mkBM x | x <- xs]
+  bgroup (show fun) $ [mkBM x | x <- xs]
   where mkBM x = benchDefault (showMemoryUsage x) $ mkApp1 fun tys x
 
 {- | Given a builtin function f of type a * b -> _ together with lists xs::[a] and
@@ -217,7 +217,7 @@ createTwoTermBuiltinBench
   -> [b]
   -> Benchmark
 createTwoTermBuiltinBench fun tys xs ys =
-     bgroup (show fun) $ [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
+  bgroup (show fun) $ [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
   where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 fun tys x y
 
 createTwoTermBuiltinBenchWithFlag
@@ -237,7 +237,7 @@ createTwoTermBuiltinBenchWithFlag
   -> [b]
   -> Benchmark
 createTwoTermBuiltinBenchWithFlag fun tys flag xs ys =
-    bgroup (show fun) $ [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
+  bgroup (show fun) $ [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
   where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp3 fun tys flag x y
 
 {- | Given a builtin function f of type a * b -> _ together with lists xs::[a] and
@@ -296,8 +296,8 @@ createTwoTermBuiltinBenchElementwiseWithWrappers
   -> [b]
   -> Benchmark
 createTwoTermBuiltinBenchElementwiseWithWrappers (wrapX, wrapY) fun tys xs ys =
-    bgroup (show fun) $
-      zipWith (\x y -> bgroup (showMemoryUsage $ wrapX x) [mkBM x y]) xs ys
+  bgroup (show fun) $
+  zipWith (\x y -> bgroup (showMemoryUsage $ wrapX x) [mkBM x y]) xs ys
   where mkBM x y = benchDefault (showMemoryUsage $ wrapY y) $ mkApp2 fun tys x y
 
 {- | Given a builtin function f of type a * b * c -> _ together with a list of
