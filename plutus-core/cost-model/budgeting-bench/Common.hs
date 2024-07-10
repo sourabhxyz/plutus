@@ -242,9 +242,9 @@ createTwoTermBuiltinBenchWithFlag fun tys flag xs ys =
   bgroup (show fun) $ [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
   where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp3 fun tys flag x y
 
-{- | Given a builtin function f of type a * b -> _ together with lists xs::[a] and
-   ys::[b], create a collection of benchmarks which run f on all pairs in 'zip
-   xs ys'.  This can be used when the worst-case execution time of a
+{- | Given a builtin function f of type a * b -> _ together with a list of (a,b)
+   pairs, create a collection of benchmarks which run f on all of the pairs in
+   the list.  This can be used when the worst-case execution time of a
    two-argument builtin is known to occur when it is given two identical
    arguments (for example equality testing, where the function has to examine
    the whole of both inputs in that case; with unequal arguments it will usually
