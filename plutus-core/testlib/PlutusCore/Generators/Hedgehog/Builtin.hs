@@ -29,8 +29,8 @@ import PlutusCore.Crypto.BLS12_381.G1 qualified as BLS12_381.G1
 import PlutusCore.Crypto.BLS12_381.G2 qualified as BLS12_381.G2
 import PlutusCore.Crypto.BLS12_381.Pairing qualified as BLS12_381.Pairing
 import PlutusCore.Data (Data (..))
-import PlutusCore.Evaluation.Machine.ExMemoryUsage (IntegerCostedAsNumBytes, IntegerCostedLiterally,
-                                                    ListCostedByLength)
+import PlutusCore.Evaluation.Machine.ExMemoryUsage (IntegerCostedLiterally, ListCostedByLength,
+                                                    NumBytesCostedAsNumWords)
 import PlutusCore.Generators.Hedgehog.AST hiding (genConstant)
 
 import Data.ByteString qualified as BS
@@ -82,7 +82,7 @@ genConstant tr
     | Just HRefl <- eqTypeRep tr (typeRep @Integer) = SomeGen genInteger
     | Just HRefl <- eqTypeRep tr (typeRep @Int) = SomeGen genInteger
     | Just HRefl <- eqTypeRep tr (typeRep @Word8) = SomeGen genInteger
-    | Just HRefl <- eqTypeRep tr (typeRep @IntegerCostedAsNumBytes) = SomeGen genInteger
+    | Just HRefl <- eqTypeRep tr (typeRep @NumBytesCostedAsNumWords) = SomeGen genInteger
     | Just HRefl <- eqTypeRep tr (typeRep @IntegerCostedLiterally) = SomeGen genInteger
     -- FIXME: do we have to worry about ListCostedByLength here?
     | Just HRefl <- eqTypeRep tr (typeRep @Bool) = SomeGen Gen.bool

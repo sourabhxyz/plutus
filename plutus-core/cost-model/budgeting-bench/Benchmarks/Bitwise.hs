@@ -5,10 +5,15 @@ import Common
 import Generators
 
 import PlutusCore
-import PlutusCore.Evaluation.Machine.ExMemoryUsage
+import PlutusCore.Evaluation.Machine.CostStream (sumCostStream)
+import PlutusCore.Evaluation.Machine.ExMemoryUsage (ExMemoryUsage, IntegerCostedLiterally (..),
+                                                    ListCostedByLength (..),
+                                                    NumBytesCostedAsNumWords (..), flattenCostRose,
+                                                    memoryUsage)
 
 import Criterion.Main
 import Data.ByteString qualified as BS
+import Data.SatInt (fromSatInt)
 import Hedgehog qualified as H
 
 {- | Costing benchmarks for bitwise bytestring builtins and integer/bytestring conversions. -}
@@ -31,12 +36,15 @@ makeSample :: H.Seed -> [BS.ByteString]
 makeSample seed = makeSizedByteStrings seed sampleSizes
 
 -- Make an integer of size n which encodes to 0xFF...FF
-repunit :: Integer -> Integer
-repunit n = 256^(8*n) - 1
+repunitOfSize :: Int -> Integer
+repunitOfSize n = 256^(8*n) - 1
 
 -- Calculate the index of the top (ie, righmost) bit in a bytestring.
 topBitIndex :: BS.ByteString -> Integer
 topBitIndex s = fromIntegral $ 8*(BS.length s)-1
+
+memoryUsageAsNumBytes :: ExMemoryUsage a => a -> Integer
+memoryUsageAsNumBytes = (8*) . fromSatInt . sumCostStream . flattenCostRose . memoryUsage
 
 {- Experiments show that the times for big-endian and little-endian
    `byteStringToInteger` conversions are very similar, with big-endian
@@ -65,12 +73,12 @@ benchByteStringToInteger =
 benchIntegerToByteString :: Benchmark
 benchIntegerToByteString =
     let b = IntegerToByteString
-        -- Widths are in words: we need to convert those to widths in bytes for the implementation
-        widths = fmap (fromIntegral .(8*)) sampleSizes
-        inputs = fmap repunit widths
+        inputs = fmap repunitOfSize sampleSizes
+        -- The minimum width of bytestring needed to fit the inputs into.
+        widthsInBytes = fmap memoryUsageAsNumBytes inputs
     in createThreeTermBuiltinBenchElementwiseWithWrappers
-       (id, IntegerCostedLiterally, id) b [] $
-       zip3 (repeat True) widths inputs
+       (id, NumBytesCostedAsNumWords, id) b [] $
+       zip3 (repeat True) widthsInBytes inputs
 
 {- For `andByteString` with different-sized inputs, calling it with extension
 semantics (ie, first argument=True) takes up to about 5% longer than with
@@ -153,7 +161,7 @@ benchReplicateByte =
       -- ^ This gives us replication counts up to 64*128 = 8192, the maximum allowed.
       inputs = pairWith (const (0xFF::Integer)) xs
   in createTwoTermBuiltinBenchElementwiseWithWrappers
-     (IntegerCostedAsNumBytes, id) ReplicateByte [] inputs
+     (NumBytesCostedAsNumWords, id) ReplicateByte [] inputs
 
 {- Benchmarks with varying sizes of bytestrings and varying amounts of shifting
    show that the execution time of `shiftByteString` depends linearly on the

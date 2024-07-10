@@ -21,9 +21,9 @@ import PlutusCore.Data (Data (..))
 import PlutusCore.Default.Universe
 import PlutusCore.Evaluation.Machine.BuiltinCostModel
 import PlutusCore.Evaluation.Machine.ExBudgetStream (ExBudgetStream)
-import PlutusCore.Evaluation.Machine.ExMemoryUsage (ExMemoryUsage, IntegerCostedAsNumBytes (..),
-                                                    IntegerCostedLiterally (..),
-                                                    ListCostedByLength (..), memoryUsage,
+import PlutusCore.Evaluation.Machine.ExMemoryUsage (ExMemoryUsage, IntegerCostedLiterally (..),
+                                                    ListCostedByLength (..),
+                                                    NumBytesCostedAsNumWords (..), memoryUsage,
                                                     singletonRose)
 import PlutusCore.Pretty (PrettyConfigPlc)
 
@@ -1868,11 +1868,11 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
     -- Conversions
     {- See Note [Input length limitation for IntegerToByteString] -}
     toBuiltinMeaning _semvar IntegerToByteString =
-        let integerToByteStringDenotation :: Bool -> IntegerCostedAsNumBytes -> Integer -> BuiltinResult BS.ByteString
-            {- The second argument is wrapped in a IntegerCostedAsNumBytes to allow us to
+        let integerToByteStringDenotation :: Bool -> NumBytesCostedAsNumWords -> Integer -> BuiltinResult BS.ByteString
+            {- The second argument is wrapped in a NumBytesCostedAsNumWords to allow us to
                interpret it as a size during costing.  It appears as an integer
                in UPLC: see Note [Integral types as Integer]. -}
-            integerToByteStringDenotation b (IntegerCostedAsNumBytes w) = Bitwise.integerToByteStringWrapper b w
+            integerToByteStringDenotation b (NumBytesCostedAsNumWords w) = Bitwise.integerToByteStringWrapper b w
             {-# INLINE integerToByteStringDenotation #-}
         in makeBuiltinMeaning
             integerToByteStringDenotation
@@ -1938,8 +1938,8 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             (runCostingFunTwoArguments . paramWriteBits)
 
     toBuiltinMeaning _semvar ReplicateByte =
-        let replicateByteDenotation :: IntegerCostedAsNumBytes -> Word8 -> BuiltinResult BS.ByteString
-            replicateByteDenotation (IntegerCostedAsNumBytes n) w = Bitwise.replicateByte n w
+        let replicateByteDenotation :: NumBytesCostedAsNumWords -> Word8 -> BuiltinResult BS.ByteString
+            replicateByteDenotation (NumBytesCostedAsNumWords n) w = Bitwise.replicateByte n w
             -- FIXME: be careful about the coercion in replicateByte
             {-# INLINE replicateByteDenotation #-}
         in makeBuiltinMeaning
