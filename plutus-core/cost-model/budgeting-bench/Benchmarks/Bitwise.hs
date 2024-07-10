@@ -48,24 +48,18 @@ benchByteStringToInteger =  createTwoTermBuiltinBenchElementwise ByteStringToInt
 
 ------------------------- IntegerToByteString -------------------------
 
-{- We have four possibilities for integer to bytestring conversions: they can be
- big- or little-endian, and they can also be of bounded or unbounded width.
- Experiments show that all of these take about the same time, with the bounded
- big-endian conversion taking a few percent longer than the other three
- possiblities.  We just benchmark that and use the model for all of the
- possibilities.  The bounded conversions can require some extra work to pad the
- result to the required width, for example if we ask to convert the integer 2 to
- a bytestring of width 1000.  We use a quadratic costing function which uses
- only the size of the integer, but this is safe because the implementation uses
- a single function call to generate the padding and experiments show that the
- time required for this is negligible in comparison to the conversion time.
- It's important to make sure that the memory cost does take account of the width
- though. -}
-
--- FIXME?  Make sure that the input integer really does require the full width so that the
--- conversion does the maximum amount of work.  We could do this by converting 0xFF...FF
--- to aninteger.  The sample we use gives us bytestrings up to 8*150 = 1200 bytes long.
--- This is well within the 8192-byte limit.
+{- We have four possibilities for integer to bytestring conversions: they can be big- or
+ little-endian, and they can also be of bounded or unbounded width.  Experiments show that
+ all of these take about the same time, with the bounded big-endian conversion taking a
+ few percent longer than the other three possiblities.  We just benchmark that and use the
+ model for all of the possibilities.  The bounded conversions can require some extra work
+ to pad the result to the required width, for example if we ask to convert the integer 2
+ to a bytestring of width 1000.  We use a quadratic costing function which uses only the
+ size of the integer, but this is safe because the implementation uses a single function
+ call to generate the padding and experiments show that the time required for this is
+ negligible in comparison to the conversion time.  It's important to make sure that the
+ memory cost does take account of the width though.  The sample we use gives us
+ bytestrings up to 8*150 = 1200 bytes long.  This is well -- within the 8192-byte limit. -}
 benchIntegerToByteString :: Benchmark
 benchIntegerToByteString =
     let b = IntegerToByteString
@@ -86,14 +80,11 @@ benchIntegerToByteString =
     in createBench $ zip3 (repeat True) widths inputs
 
 
-{- Most of the initial benchmarks were run with a set of small input bytestrings
-  (up to size 40 / 320 bytes) and then again with a set of large inputs (up to
-  size 400 / 3200 bytes).  In the budgeting benchmarks we go up to size 50 (=
-  400 bytes) for small inputs.
+{- Most of the initial exploratory benchmarks were run with a set of small input
+  bytestrings (up to size 160 / 1280 bytes) and then again with a set of large
+  inputs (up to size 1600 / 12800 bytes).  In the final budgeting benchmarks we
+  mostly go up to size 150 (= 1200 bytes).
 -}
-
--- NO!!!!  Now we're going up to size 150 for most of the builtins.  Check what
--- we actually used in the original benchmarks.
 
 {- For AndByteString with different-sized inputs, calling it with extension
 semantics (ie, first argument=True) takes up to about 5% longer than with
@@ -141,10 +132,10 @@ benchReadBit =
    updates to 1024-byte bytestrings, always writing the highest-indexed bit to
    take account of this.  We use a fresh bytestring for each set of updates.
 -}
-benchWriteBits100 :: Benchmark
-benchWriteBits100 =
+benchWriteBits :: Benchmark
+benchWriteBits =
   let fun = WriteBits
-      size = 100  -- This is equal to length 8192
+      size = 128  -- This is equal to length 1024.
       xs = makeSizedByteStrings seedA $ take numSamples $ repeat size
       l = zip xs [1..numSamples]
       -- Given a bytestring s and an integer k, return a pair (s,u) where u is a
@@ -157,35 +148,16 @@ benchWriteBits100 =
       inputs = fmap mkUpdatesFor l
       mkBM x y = benchDefault (showMemoryUsage (ListCostedByLength y)) $ mkApp2 fun [] x y
   in bgroup (show fun) $ fmap(\(s,u) -> bgroup (showMemoryUsage s) $ [mkBM s u]) inputs
-  -- This is like createTwoTermBuiltinBenchElementwise except that the benchmark
-  -- name contains the length of the list of updates, not the memory usage.  The
-  -- denotation of WriteBits in Default.Builtins must wrap its second argument
-  -- in ListCostedByLength to make sure that the correct ExMemoryUsage instance
-  -- is called for costing.
+  {- This is like createTwoTermBuiltinBenchElementwise except that the benchmark name contains
+   the length of the list of updates, not the memory usage.  The denotation of WriteBits
+   in Default.Builtins must wrap its second argument in ListCostedByLength to make sure
+   that the correct ExMemoryUsage instance is called for costing. -}
 
--- FIXME: remove the duplicate
-
-benchWriteBits1024 :: Benchmark
-benchWriteBits1024 =
-  let fun = WriteBits
-      size = 1024
-      xs = makeSizedByteStrings seedA $ take numSamples $ repeat size
-      l = zip xs [1..numSamples]
-      -- Given a bytestring s and an integer k, return a pair (s,u) where u is a list of updates
-      -- which write the highest bit in s 10*k times.  Here k will range from 1 to numSamples,
-      -- which is 150.
-      mkUpdatesFor (s,k) =
-        let topIndex = topBitIndex s
-            updates = take (10*k) $ cycle [(topIndex, False), (topIndex, True)]
-        in (s, updates)
-      inputs = fmap mkUpdatesFor l
-      mkBM x y = benchDefault (showMemoryUsage (ListCostedByLength y)) $ mkApp2 fun [] x y
-  in bgroup (show fun) $ fmap(\(s,u) -> bgroup (showMemoryUsage s) $ [mkBM s u]) inputs
-
-{- For small inputs `replicateByte` looks constant-time.  For larger inputs it's linear.
-   We're limiting the output to 8192 bytes (size 1024), so we may as well test the whole
-   legal range.  NB: if we change the value of integerToByteStringMaximumOutputLength then
-   we probably need to change the limits here too.
+{- For small inputs `replicateByte` looks constant-time.  For larger inputs it's
+   linear.  We're limiting the output to 8192 bytes (size 1024), so we may as
+   well test the whole legal range.  NB: if we change the value of
+   integerToByteStringMaximumOutputLength then we probably need to change the
+   limits here too.
 -}
 benchReplicateByte :: Benchmark
 benchReplicateByte =
@@ -228,23 +200,22 @@ benchRotateBytestring =
       ns = fmap (const 1) xs
   in createTwoTermBuiltinBenchElementwiseLiteralInY RotateByteString [] xs ns
 
-{- For CountSetBits, the time taken is linear in the length.  A model based on
-   small input sizes (up to 1280 bytes) extrapolates well to results for large
-   inputs (up to 12800 bytes).  Counting the bits in an all-0xFF bytestring may
-   take 1% or so longer than for an all-0x00 bytestring. -}
+{- For CountSetBits, the time taken is linear in the length.  A model based on small input
+   sizes (up to 1280 bytes) extrapolates well to results for large inputs (up to 12800
+   bytes).  Counting the bits in an all-0xFF bytestring may take 1% or so longer than for
+   an all-0x00 bytestring. -}
 benchCountSetBits :: Benchmark
 benchCountSetBits =
   let xs = fmap (\n -> BS.replicate (8*n) 0xFF) sampleSizes  -- length 8, 16, ..., 1200
   in createOneTermBuiltinBench CountSetBits [] xs
 
-{- For FindFirstSetBits the time taken is pretty much linear in the length, with
-   occasional bumps.  Unsurprisingly the function takes longest for an all-0x00
-   bytestring because it has to examine every byte in that case.  For costing we
-   use 0x8000...00 just to avoid the all-zeros case in case someone attempts to
-   optimise for that case at some time in the future.  For small data the worst
-   case takes up to 8% longer than the best case (0x00..01) and for large data
-   it can take up to 40% longer. A model based on small input sizes extrapolates
-   well to results for large inputs. -}
+{- For FindFirstSetBits the time taken is pretty much linear in the length, with occasional
+   bumps.  Unsurprisingly the function takes longest for an all-0x00 bytestring because it
+   has to examine every byte in that case.  For costing we use 0x8000...00 just to avoid
+   the all-zeros case in case someone attempts to optimise for that case at some time in
+   the future.  For small data the worst case takes up to 8% longer than the best case
+   (0x00..01) and for large data it can take up to 40% longer. A model based on small
+   input sizes extrapolates well to results for large inputs. -}
 benchFindFirstSetBit :: Benchmark
 benchFindFirstSetBit =
   let xs = fmap (\n -> BS.cons 0x80 (BS.replicate (8*n-1) 0x00)) sampleSizes
@@ -267,16 +238,3 @@ makeBenchmarks =
     , benchFindFirstSetBit
     ]
   ]
-
-
-{-
-AndByteString            x -> 1,...,50; small -> 10,20,...,400
-ComplementByteString     x -> 1,...,50; small -> 1,2,...,160
-ReadBit                  x -> 10,20,...,1500;  small -> 1,2,...,160
-WriteBits                x -> 125, y -> 1,...50; small: x -> 10, 20, ..., 400, y -> 10,...,1200; lines out.
-ReplicateByte            x -> 80,160,...,12000; small -> 1,2,...,160; large -> 10,20,...,1600; way out
-ShiftByteString          x -> 1,...,50; y -> 1; small x -> 1,...,40; y -> 7,15,...,319
-RotateBytestring         Similar
-CountSetBits             x -> 1,...,50; small -> 1,...,160;
-FindFirstSetBit          x -> 1,...,50; small -> 1,...,160
--}
