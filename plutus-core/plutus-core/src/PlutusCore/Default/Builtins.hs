@@ -1869,8 +1869,9 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
     {- See Note [Input length limitation for IntegerToByteString] -}
     toBuiltinMeaning _semvar IntegerToByteString =
         let integerToByteStringDenotation :: Bool -> IntegerCostedAsByteSize -> Integer -> BuiltinResult BS.ByteString
-            {- The second argument is wrapped in a IntegerCostedAsByteSize to allow us to interpret it as a size during
-               costing.  It appears as an integer in UPLC: see Note [Integral types as Integer]. -}
+            {- The second argument is wrapped in a IntegerCostedAsByteSize to allow us to
+               interpret it as a size during costing.  It appears as an integer
+               in UPLC: see Note [Integral types as Integer]. -}
             integerToByteStringDenotation b (IntegerCostedAsByteSize w) = Bitwise.integerToByteStringWrapper b w
             {-# INLINE integerToByteStringDenotation #-}
         in makeBuiltinMeaning

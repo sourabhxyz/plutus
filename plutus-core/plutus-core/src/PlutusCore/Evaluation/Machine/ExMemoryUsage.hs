@@ -179,7 +179,9 @@ instance ExMemoryUsage () where
    The `IntegerCostedAsByteSize` type wraps an Integer `w` in a newtype whose
    `ExMemoryUsage` is equal to the number of eight-byte words required to
    contain `w` bytes, allowing its costing function to work properly.  We also
-   use this for `replicateByte`.
+   use this for `replicateByte`.  If this is used to wrap an argument in the
+   denotation of a builtin then it *MUST* also be used to wrap the same argument
+   in the relevant budgeting benchmark.
 -}
 newtype IntegerCostedAsByteSize = IntegerCostedAsByteSize { unIntegerCostedAsByteSize :: Integer }
 instance ExMemoryUsage IntegerCostedAsByteSize where
@@ -189,7 +191,9 @@ instance ExMemoryUsage IntegerCostedAsByteSize where
 {- | A wrapper for Integers whose "memory usage" for costing purposes is the
    absolute value of the integer.  This is used for costing built-in functions
    such as `shiftByteString` and `rotateByteString`, where the cost may depend
-   on the actual value of the shift argument, not its size.
+   on the actual value of the shift argument, not its size.  If this is used to
+   wrap an argument in the denotation of a builtin then it *MUST* also be used
+   to wrap the same argument in the relevant budgeting benchmark.
 -}
 newtype IntegerCostedLiterally = IntegerCostedLiterally { unIntegerCostedLiterally :: Integer }
 instance ExMemoryUsage IntegerCostedLiterally where
@@ -197,7 +201,9 @@ instance ExMemoryUsage IntegerCostedLiterally where
     {-# INLINE memoryUsage #-}
 
 {- | A wrappper for lists whose "memory usage" for costing purposes is just the
-   length of the list, ignoring the sizes of the elements. -}
+   length of the list, ignoring the sizes of the elements. If this is used to
+   wrap an argument in the denotation of a builtin then it *MUST* also be used
+   to wrap the same argument in the relevant budgeting benchmark. -}
 newtype ListCostedByLength a = ListCostedByLength { unListCostedByLength :: [a] }
 instance ExMemoryUsage (ListCostedByLength a) where
     memoryUsage (ListCostedByLength l) = singletonRose . fromIntegral $ length l

@@ -31,7 +31,7 @@ makeSample :: H.Seed -> [BS.ByteString]
 makeSample seed = makeSizedByteStrings seed sampleSizes
 
 -- Make an integer of size n which encodes to 0xFF...FF
-repunit :: Int -> Integer
+repunit :: Integer -> Integer
 repunit n = 256^(8*n) - 1
 
 -- Calculate the index of the top (ie, righmost) bit in a bytestring.
@@ -65,21 +65,11 @@ benchByteStringToInteger =  createTwoTermBuiltinBenchElementwise ByteStringToInt
 benchIntegerToByteString :: Benchmark
 benchIntegerToByteString =
     let b = IntegerToByteString
-        widths = sampleSizes
+        widths = fmap fromIntegral sampleSizes
         inputs = fmap repunit widths
-        -- This is like createThreeTermBuiltinBenchElementwise, but we want to
-        -- make sure that the width appears literally in the benchmark name.
-        createBench l =
-            let mkOneBM (e, width, n) =
-                      -- Widths are in words: we need to convert those to widths in bytes for the implementation
-                      let width' = 8 * fromIntegral width
-                      in bgroup (showMemoryUsage e) [
-                              bgroup (showMemoryUsage (IntegerCostedAsByteSize width')) [mkBM e width' n]
-                             ]
-                          where mkBM x y z = benchDefault (showMemoryUsage z) $ mkApp3 b [] x y z
-            in bgroup (show b) $ fmap mkOneBM l
-
-    in createBench $ zip3 (repeat True) widths inputs
+    in createThreeTermBuiltinBenchElementwiseWithWrappers
+       (id, IntegerCostedAsByteSize, id) b [] $
+       zip3 (repeat True) widths inputs
 
 {- For `andByteString` with different-sized inputs, calling it with extension
 semantics (ie, first argument=True) takes up to about 5% longer than with
@@ -162,7 +152,8 @@ benchReplicateByte =
       xs = fmap (fromIntegral . (64*)) [1..numCases] :: [Integer]
       -- ^ This gives us replication counts up to 64*128 = 8192, the maximum allowed.
       ys = replicate numCases (0xFF :: Integer)
-  in createTwoTermBuiltinBenchElementwiseWithXAsByteSize ReplicateByte [] xs ys
+  in createTwoTermBuiltinBenchElementwiseWithWrappers
+     (IntegerCostedAsByteSize, id) ReplicateByte [] xs ys
 
 {- Benchmarks with varying sizes of bytestrings and varying amounts of shifting
    show that the execution time of `shiftByteString` depends linearly on the
@@ -181,7 +172,8 @@ benchShiftByteString :: Benchmark
 benchShiftByteString =
   let xs = makeSample seedA
       ns = fmap (const 1) xs
-      in createTwoTermBuiltinBenchElementwiseLiteralInY ShiftByteString [] xs ns
+      in createTwoTermBuiltinBenchElementwiseWithWrappers
+         (id, IntegerCostedLiterally) ShiftByteString [] xs ns
 
 {- The behaviour of `rotateByteString` is very similar to that of
    `shiftByteString` except that the time taken depends pretty much linearly on
@@ -195,7 +187,8 @@ benchRotateBytestring :: Benchmark
 benchRotateBytestring =
   let xs = makeSample seedA
       ns = fmap (const 1) xs
-  in createTwoTermBuiltinBenchElementwiseLiteralInY RotateByteString [] xs ns
+  in createTwoTermBuiltinBenchElementwiseWithWrappers
+     (id, IntegerCostedLiterally) RotateByteString [] xs ns
 
 {- For `countSetBits`, the time taken is linear in the length.  A model based on
    small input sizes (up to 1280 bytes) extrapolates well to results for large
