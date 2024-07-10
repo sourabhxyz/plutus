@@ -158,9 +158,11 @@ builtinMemoryModels = BuiltinCostModelBase
   , paramComplementByteString            = Id $ ModelOneArgumentLinearInX identityFunction
   , paramReadBit                         = Id $ ModelTwoArgumentsConstantCost 1
   , paramWriteBits                       = Id $ ModelTwoArgumentsLinearInX identityFunction
-  -- The empty bytestring has memory usage 0 (it should probably be 1), so we add an extra memory
-  -- unit here to make sure that its memory cost is always nonzero. Note also that `replicateByte`'s
-  -- argument is costed as a literal size.
+  -- The empty bytestring has memory usage 1, so we add an extra memory unit here to make sure that
+  -- the memory cost of `replicateByte` is always nonzero. That means that we're charging one unit
+  -- ore than we perhaps should for nonempty bytestrings, but that's negligible (plus there's some
+  -- overhead for bytesrings anyway).  Note also that `replicateByte`'s argument is costed as a
+  -- literal size.
   , paramReplicateByte                   = Id $ ModelTwoArgumentsLinearInX $ OneVariableLinearFunction 1 1
   , paramShiftByteString                 = Id $ ModelTwoArgumentsLinearInX identityFunction
   , paramRotateByteString                = Id $ ModelTwoArgumentsLinearInX identityFunction

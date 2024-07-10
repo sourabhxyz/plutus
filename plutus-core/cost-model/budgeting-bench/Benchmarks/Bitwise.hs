@@ -45,8 +45,8 @@ topBitIndex s = fromIntegral $ 8*(BS.length s)-1
    conversion as well.  A quadratic function fitted to inputs of size up to 150
    gives a good fit and extrapolates well to larger inputs. -}
 benchByteStringToInteger :: Benchmark
-benchByteStringToInteger =  createTwoTermBuiltinBenchElementwise ByteStringToInteger []
-                            (repeat True) (makeSample seedA)
+benchByteStringToInteger =
+  createTwoTermBuiltinBenchElementwise ByteStringToInteger [] $ pairWith (const True) (makeSample seedA)
 
 {- We have four possibilities for integer to bytestring conversions: they can be
  big- or little-endian, and they can also be of bounded or unbounded width.
@@ -69,7 +69,7 @@ benchIntegerToByteString =
         widths = fmap (fromIntegral .(8*)) sampleSizes
         inputs = fmap repunit widths
     in createThreeTermBuiltinBenchElementwiseWithWrappers
-       (id, IntegerCostedAsNumBytes, id) b [] $
+       (id, IntegerCostedLiterally, id) b [] $
        zip3 (repeat True) widths inputs
 
 {- For `andByteString` with different-sized inputs, calling it with extension
@@ -111,8 +111,7 @@ the bit to be read. -}
 benchReadBit :: Benchmark
 benchReadBit =
   let xs = makeSample seedA
-      ys :: [Integer] = fmap topBitIndex xs
-  in createTwoTermBuiltinBenchElementwise ReadBit [] xs ys
+  in createTwoTermBuiltinBenchElementwise ReadBit [] $ pairWith topBitIndex xs
 
 {- Benchmarks show that the time taken by `writeBits` depends mostly on the size
    of the list of updates, although it may take a little longer to write bits
@@ -152,9 +151,9 @@ benchReplicateByte =
   let numCases = 128 :: Int
       xs = fmap (fromIntegral . (64*)) [1..numCases] :: [Integer]
       -- ^ This gives us replication counts up to 64*128 = 8192, the maximum allowed.
-      ys = replicate numCases (0xFF :: Integer)
+      inputs = pairWith (const (0xFF::Integer)) xs
   in createTwoTermBuiltinBenchElementwiseWithWrappers
-     (IntegerCostedAsNumBytes, id) ReplicateByte [] xs ys
+     (IntegerCostedAsNumBytes, id) ReplicateByte [] inputs
 
 {- Benchmarks with varying sizes of bytestrings and varying amounts of shifting
    show that the execution time of `shiftByteString` depends linearly on the
@@ -172,9 +171,9 @@ benchReplicateByte =
 benchShiftByteString :: Benchmark
 benchShiftByteString =
   let xs = makeSample seedA
-      ns = fmap (const 1) xs
+      inputs = pairWith (const 1) xs
       in createTwoTermBuiltinBenchElementwiseWithWrappers
-         (id, IntegerCostedLiterally) ShiftByteString [] xs ns
+         (id, IntegerCostedLiterally) ShiftByteString [] inputs
 
 {- The behaviour of `rotateByteString` is very similar to that of
    `shiftByteString` except that the time taken depends pretty much linearly on
@@ -187,9 +186,9 @@ benchShiftByteString =
 benchRotateBytestring :: Benchmark
 benchRotateBytestring =
   let xs = makeSample seedA
-      ns = fmap (const 1) xs
+      inputs = pairWith (const 1) xs
   in createTwoTermBuiltinBenchElementwiseWithWrappers
-     (id, IntegerCostedLiterally) RotateByteString [] xs ns
+     (id, IntegerCostedLiterally) RotateByteString [] inputs
 
 {- For `countSetBits`, the time taken is linear in the length.  A model based on
    small input sizes (up to 1280 bytes) extrapolates well to results for large

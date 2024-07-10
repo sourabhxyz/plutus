@@ -69,6 +69,8 @@ copyData =
      I n        -> I $ copyInteger n
      B b        -> B $ copyByteString b
 
+pairWith :: (a -> b) -> [a] -> [(a,b)]
+pairWith f = fmap (\a -> (a, f a))
 
 ---------------- Creating benchmarks ----------------
 
@@ -262,8 +264,7 @@ createTwoTermBuiltinBenchElementwise
      )
   => fun
   -> [Type tyname uni ()]
-  -> [a]
-  -> [b]
+  -> [(a,b)]
   -> Benchmark
 createTwoTermBuiltinBenchElementwise =
   createTwoTermBuiltinBenchElementwiseWithWrappers (id, id)
@@ -292,12 +293,11 @@ createTwoTermBuiltinBenchElementwiseWithWrappers
   => (a -> a', b -> b')
   -> fun
   -> [Type tyname uni ()]
-  -> [a]
-  -> [b]
+  -> [(a,b)]
   -> Benchmark
-createTwoTermBuiltinBenchElementwiseWithWrappers (wrapX, wrapY) fun tys xs ys =
+createTwoTermBuiltinBenchElementwiseWithWrappers (wrapX, wrapY) fun tys inputs =
   bgroup (show fun) $
-  zipWith (\x y -> bgroup (showMemoryUsage $ wrapX x) [mkBM x y]) xs ys
+  fmap(\(x, y) -> bgroup (showMemoryUsage $ wrapX x) [mkBM x y]) inputs
   where mkBM x y = benchDefault (showMemoryUsage $ wrapY y) $ mkApp2 fun tys x y
 
 {- | Given a builtin function f of type a * b * c -> _ together with a list of
@@ -345,7 +345,7 @@ createThreeTermBuiltinBenchElementwiseWithWrappers
   -> Benchmark
 createThreeTermBuiltinBenchElementwiseWithWrappers (wrapX, wrapY, wrapZ) fun tys inputs =
   bgroup (show fun) $
-  map
+  fmap
   (\(x, y, z) ->
      bgroup (showMemoryUsage $ wrapX x)
      [bgroup (showMemoryUsage $ wrapY y) [mkBM x y z]]

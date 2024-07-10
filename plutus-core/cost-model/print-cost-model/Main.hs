@@ -60,7 +60,7 @@ renderTwoVariableQuadraticFunction
 -- and this isn't reflected in the output.  We're able to fix this for
 -- LiteralInYOrLinearInZ since we can tell from the constructor that the second
 -- argument is wrapped, but this doesn't work for `replicateByte`, where the
--- replication count is wrapped in IntegerCostedAsByteSize and we don't see that
+-- replication count is wrapped in IntegerCostedAsNumBytes and we don't see that
 -- here.  We should really print "x bytes" instead of just "x", but to fix that
 -- we'd need access to the signatures of the builtins here as well.  Maybe it
 -- could be argued that the user should be aware of the wrappings and interpret
