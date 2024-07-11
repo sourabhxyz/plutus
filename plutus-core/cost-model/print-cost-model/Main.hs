@@ -22,21 +22,35 @@ data ModelComponent = Cpu | Memory
 
 ---------------- Printing cost models  ----------------
 
+-- Print a monomial like 5*x or 11*max(x,y)
+stringOfMonomial :: Integer -> String -> String
+stringOfMonomial s v =
+  if s == 1 then unparen v  -- Just so we don't get things like 5 + (x+y).
+  else if s == -1 then "-" ++ v
+       else printf "%d*%s" s v
+            -- Print the slope even if it's zero, so we know the
+            -- function's not constant.
+  where unparen w =
+          if w /= "" && head w == '(' && last w == ')'
+          then tail $ init w
+          else w
+
 -- | Print a linear function in readable form.  The string argument is
 -- supposed to represent the input to the function: x, y, y+z, etc.
 renderLinearFunction :: LinearFunction -> String -> String
 renderLinearFunction (LinearFunction intercept slope) var =
     if intercept == 0 then stringOfMonomial slope var
     else printf "%d + %s" intercept (stringOfMonomial slope var)
-        where stringOfMonomial s v =
-                  if s == 1 then unparen v  -- Just so we don't get things like 5 + (x+y).
-                  else if s == -1 then "-" ++ v
-                  else printf "%d*%s" s v
-                  -- Print the slope even if it's zero, so we know the
-                  -- function's not constant.
-              unparen v = if v /= "" && head v == '(' && last v == ')'
-                          then tail $ init v
-                          else v
+
+renderTwoVariableLinearFunction :: TwoVariableLinearFunction -> String -> String -> String
+renderTwoVariableLinearFunction (TwoVariableLinearFunction intercept slope1 slope2) var1 var2 =
+    if intercept == 0
+    then stringOfMonomial slope1 var1 ++ " + " ++ stringOfMonomial slope2 var2
+    else printf "%d + %s + %s"
+      intercept
+      (stringOfMonomial slope1 var1)
+      (stringOfMonomial slope2 var2)
+
 renderOneVariableQuadraticFunction
   :: OneVariableQuadraticFunction
   -> String
@@ -79,6 +93,8 @@ renderModel =
      QuadraticInY          f   -> [ renderOneVariableQuadraticFunction f "y" ]
      QuadraticInZ          f   -> [ renderOneVariableQuadraticFunction f "z" ]
      QuadraticInXAndY      f   -> [ renderTwoVariableQuadraticFunction f "x" "y" ]
+     LinearInMaxYZ         f   -> [ renderLinearFunction f "max(y,z)" ]
+     LinearInYAndZ         f   -> [ renderTwoVariableLinearFunction f "y" "z" ]
      LiteralInYOrLinearInZ f -> [ "if y==0"
                                   , printf "then %s" $ renderLinearFunction f "z"
                                   , printf "else y bytes"

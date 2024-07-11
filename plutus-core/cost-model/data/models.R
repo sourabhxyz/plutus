@@ -758,15 +758,15 @@ modelFun <- function(path) {
         filtered <- data %>%
             filter.and.check.nonempty(fname) %>%
             discard.overhead ()
-        m <- lm(t ~ I(x_mem + y_mem), filtered)
-        mk.result(m, "added_sizes")
+        m <- lm(t ~ y_mem + z_mem, filtered)
+        mk.result(m, "linear_in_y_and_z")
     }
     orByteStringModel         <- andByteStringModel
     xorByteStringModel        <- andByteStringModel
 
     complementByteStringModel <- linearInX ("ComplementByteString")
     readBitModel              <- constantModel ("ReadBit")
-    writeBitsModel            <- linearInY ("WriteBitsModel")
+    writeBitsModel            <- linearInY ("WriteBits")
     ## ^ The Y value here is the length of the list because we use ListCostedByLength in the
     ## relevant costing benchmark.
     replicateByteModel        <- linearInX ("ReplicateByte")

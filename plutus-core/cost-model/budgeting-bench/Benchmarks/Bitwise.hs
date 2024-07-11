@@ -106,6 +106,8 @@ benchAndByteString =
       xs = makeSizedByteStrings seedA inputSizes
       ys = makeSizedByteStrings seedB inputSizes
   in createTwoTermBuiltinBenchWithFlag AndByteString [] True xs ys
+  -- This requires a special case in the costing codet because we don't include
+  -- the first argument (the flag).
 
 {- For `complementByteString`, the time taken is linear in the length.  A model
  based on small input sizes extrapolates well to results for large inputs -}
@@ -222,7 +224,6 @@ benchFindFirstSetBit =
 
 makeBenchmarks :: [Benchmark]
 makeBenchmarks =
-  [ bgroup "bytestrings"
     [ benchIntegerToByteString
     , benchByteStringToInteger
     , benchAndByteString
@@ -235,4 +236,3 @@ makeBenchmarks =
     , benchCountSetBits
     , benchFindFirstSetBit
     ]
-  ]

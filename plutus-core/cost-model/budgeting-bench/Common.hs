@@ -197,7 +197,7 @@ createOneTermBuiltinBench
   -> [a]
   -> Benchmark
 createOneTermBuiltinBench fun tys xs =
-  bgroup (show fun) $ [mkBM x | x <- xs]
+  bgroup (show fun) [mkBM x | x <- xs]
   where mkBM x = benchDefault (showMemoryUsage x) $ mkApp1 fun tys x
 
 {- | Given a builtin function f of type a * b -> _ together with lists xs::[a] and
@@ -219,7 +219,7 @@ createTwoTermBuiltinBench
   -> [b]
   -> Benchmark
 createTwoTermBuiltinBench fun tys xs ys =
-  bgroup (show fun) $ [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
+  bgroup (show fun) [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
   where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp2 fun tys x y
 
 createTwoTermBuiltinBenchWithFlag
@@ -238,9 +238,10 @@ createTwoTermBuiltinBenchWithFlag
   -> [a]
   -> [b]
   -> Benchmark
-createTwoTermBuiltinBenchWithFlag fun tys flag xs ys =
-  bgroup (show fun) $ [bgroup (showMemoryUsage x) [mkBM x y | y <- ys] | x <- xs]
-  where mkBM x y = benchDefault (showMemoryUsage y) $ mkApp3 fun tys flag x y
+createTwoTermBuiltinBenchWithFlag fun tys flag ys zs =
+  bgroup (show fun) [bgroup (showMemoryUsage flag)
+                       [bgroup (showMemoryUsage y) [mkBM y z | z <- zs] | y <- ys]]
+  where mkBM y z = benchDefault (showMemoryUsage z) $ mkApp3 fun tys flag y z
 
 {- | Given a builtin function f of type a * b -> _ together with a list of (a,b)
    pairs, create a collection of benchmarks which run f on all of the pairs in
