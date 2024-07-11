@@ -327,8 +327,8 @@ data OneVariableLinearFunction = OneVariableLinearFunction
 -- | s1 * x + s2 * y + I
 data TwoVariableLinearFunction = TwoVariableLinearFunction
     { twoVariableLinearFunctionIntercept :: Intercept
-    , twoVariableLinearFunctionSlopeX    :: Slope
-    , twoVariableLinearFunctionSlopeY    :: Slope
+    , twoVariableLinearFunctionSlope1    :: Slope
+    , twoVariableLinearFunctionSlope2    :: Slope
     } deriving stock (Show, Eq, Generic, Lift)
     deriving anyclass (NFData)
 
@@ -593,13 +593,13 @@ runTwoArgumentModel
 
 data ModelThreeArguments =
     ModelThreeArgumentsConstantCost          CostingInteger
-  | ModelThreeArgumentsAddedSizes            OneVariableLinearFunction
   | ModelThreeArgumentsLinearInX             OneVariableLinearFunction
   | ModelThreeArgumentsLinearInY             OneVariableLinearFunction
   | ModelThreeArgumentsLinearInZ             OneVariableLinearFunction
   | ModelThreeArgumentsQuadraticInZ          OneVariableQuadraticFunction
   | ModelThreeArgumentsLiteralInYOrLinearInZ OneVariableLinearFunction
   | ModelThreeArgumentsLinearInMaxYZ         OneVariableLinearFunction
+  | ModelThreeArgumentsLinearInYAndZ         TwoVariableLinearFunction
     deriving stock (Show, Eq, Generic, Lift)
     deriving anyclass (NFData)
 
@@ -616,10 +616,6 @@ runThreeArgumentModel
     -> CostStream
     -> CostStream
 runThreeArgumentModel (ModelThreeArgumentsConstantCost c) = lazy $ \_ _ _ -> CostLast c
-runThreeArgumentModel
-    (ModelThreeArgumentsAddedSizes (OneVariableLinearFunction intercept slope)) =
-        lazy $ \costs1 costs2 costs3 ->
-            scaleLinearly intercept slope . addCostStream costs1 $ addCostStream costs2 costs3
 runThreeArgumentModel
     (ModelThreeArgumentsLinearInX (OneVariableLinearFunction intercept slope)) =
         lazy $ \costs1 _ _ ->
@@ -657,6 +653,10 @@ runThreeArgumentModel
             let !size2 = sumCostStream costs2
                 !size3 = sumCostStream costs3
             in scaleLinearly intercept slope $ CostLast (max size2 size3)
+runThreeArgumentModel
+    (ModelThreeArgumentsLinearInYAndZ (TwoVariableLinearFunction intercept slope2 slope3)) =
+        lazy $ \_costs1 costs2 costs3 ->
+            scaleLinearlyTwoVariables intercept slope2 costs2 slope3 costs3
 {-# NOINLINE runThreeArgumentModel #-}
 
 -- See Note [runCostingFun* API].
