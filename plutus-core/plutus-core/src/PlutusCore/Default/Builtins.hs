@@ -1335,11 +1335,12 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
     toBuiltinMeaning semvar VerifyEd25519Signature =
         let verifyEd25519SignatureDenotation
                 :: BS.ByteString -> BS.ByteString -> BS.ByteString -> BuiltinResult Bool
-            verifyEd25519SignatureDenotation =
-                case semvar of
-                  DefaultFunSemanticsVariantA -> verifyEd25519Signature_V1
-                  DefaultFunSemanticsVariantB -> verifyEd25519Signature_V2
-                  DefaultFunSemanticsVariantC -> verifyEd25519Signature_V2
+            verifyEd25519SignatureDenotation vkey msg sig =
+               let r1 = verifyEd25519Signature_V1 vkey msg sig
+                   r2 = veriafyEd25519Signature_V2 vkey msg sig
+               in if r1==r2
+               then r2
+               else error ("Verification mismatch:\n  " ++ show vkey ++ "\n  " ++ show msg ++ "\n  " ++ show sig)
             {-# INLINE verifyEd25519SignatureDenotation #-}
         in makeBuiltinMeaning
             verifyEd25519SignatureDenotation
