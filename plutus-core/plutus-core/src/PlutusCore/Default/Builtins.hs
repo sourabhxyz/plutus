@@ -1332,15 +1332,28 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             blake2b_256Denotation
             (runCostingFunOneArgument . paramBlake2b_256)
 
-    toBuiltinMeaning semvar VerifyEd25519Signature =
+    toBuiltinMeaning _semvar VerifyEd25519Signature =
         let verifyEd25519SignatureDenotation
                 :: BS.ByteString -> BS.ByteString -> BS.ByteString -> BuiltinResult Bool
             verifyEd25519SignatureDenotation vkey msg sig =
                let r1 = verifyEd25519Signature_V1 vkey msg sig
-                   r2 = veriafyEd25519Signature_V2 vkey msg sig
-               in if r1==r2
-               then r2
-               else error ("Verification mismatch:\n  " ++ show vkey ++ "\n  " ++ show msg ++ "\n  " ++ show sig)
+                   r2 = verifyEd25519Signature_V2 vkey msg sig
+                   showInputs = "  " ++ show vkey ++ "\n  " ++ show msg ++ "\n  " ++ show sig ++ "\n"
+                   checkEqual c s1 s2 =
+                       if s1 == s2
+                       then c s2  -- re-wrap the V2 result in a BuiltinResult and return it.
+                       else error ("verifyEd25519Signature result mismatch\n" ++ showInputs)
+               in case (r1, r2) of
+                      (BuiltinSuccess s1, BuiltinSuccess s2) ->
+                         checkEqual BuiltinSuccess s1 s2
+                      (BuiltinSuccessWithLogs _ s1, BuiltinSuccessWithLogs l2 s2) ->
+                         checkEqual (BuiltinSuccessWithLogs l2) s1 s2
+                      (BuiltinFailure _ err1, BuiltinFailure _ err2) ->
+                         if err1 == err2
+                         then r2
+                         else error ("Verification error mismatch:\n" ++ showInputs)
+                      (_, _) -> error ("verifyEd25519Signature result success/failure mismatch\n"
+                                        ++ show r1 ++ "\n" ++ show r2 ++ "\n" ++ showInputs)
             {-# INLINE verifyEd25519SignatureDenotation #-}
         in makeBuiltinMeaning
             verifyEd25519SignatureDenotation
