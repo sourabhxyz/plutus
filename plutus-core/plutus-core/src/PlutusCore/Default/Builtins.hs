@@ -1333,14 +1333,10 @@ instance uni ~ DefaultUni => ToBuiltinMeaning uni DefaultFun where
             blake2b_256Denotation
             (runCostingFunOneArgument . paramBlake2b_256)
 
-    toBuiltinMeaning semvar VerifyEd25519Signature =
+    toBuiltinMeaning _semvar VerifyEd25519Signature =
         let verifyEd25519SignatureDenotation
                 :: BS.ByteString -> BS.ByteString -> BS.ByteString -> BuiltinResult Bool
-            verifyEd25519SignatureDenotation =
-                case semvar of
-                  DefaultFunSemanticsVariantA -> verifyEd25519Signature_V1
-                  DefaultFunSemanticsVariantB -> verifyEd25519Signature_V2
-                  DefaultFunSemanticsVariantC -> verifyEd25519Signature_V2
+            verifyEd25519SignatureDenotation = verifyEd25519Signature_V2
             {-# INLINE verifyEd25519SignatureDenotation #-}
         in makeBuiltinMeaning
             verifyEd25519SignatureDenotation
