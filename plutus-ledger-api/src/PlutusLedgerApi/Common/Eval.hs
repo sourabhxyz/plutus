@@ -15,6 +15,7 @@ module PlutusLedgerApi.Common.Eval
     , evaluateScriptCounting
     , evaluateTerm
     , mkDynEvaluationContext
+    , defEvaluationContext
     , toMachineParameters
     , mkTermToEvaluate
     , assertWellFormedCostModelParams
@@ -180,6 +181,14 @@ mkDynEvaluationContext
     -> m EvaluationContext
 mkDynEvaluationContext ll semVars toSemVar newCMP =
     EvaluationContext ll toSemVar <$> mkMachineParametersFor semVars newCMP
+
+defEvaluationContext
+    :: PlutusLedgerLanguage
+    -> BuiltinSemanticsVariant DefaultFun
+    -> EvaluationContext
+defEvaluationContext ll semVar =
+    EvaluationContext ll (const semVar)
+      [(semVar, Plutus.defaultCekParametersForVariant semVar)]
 
 -- FIXME: remove this function
 assertWellFormedCostModelParams :: MonadError CostModelApplyError m => Plutus.CostModelParams -> m ()

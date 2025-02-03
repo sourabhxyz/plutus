@@ -63,6 +63,7 @@ module PlutusLedgerApi.Common (
   -- ** Evaluation context
   Eval.EvaluationContext (..),
   Eval.mkDynEvaluationContext,
+  Eval.defEvaluationContext,
   Eval.toMachineParameters,
   -- While not strictly used by the ledger, this is useful for people trying to
   -- reconstruct the term evaluated by the ledger from the arguments, e.g.
